@@ -6,13 +6,36 @@ try {
   
    if (con) {
     console.log("Connected to MongoDB");
+
+    //Schemas 
     const productSchema = mongoose.Schema({
       name: { type: String },
-      category: { type: String },
+      category: [String],
       price: { type: Number },
       cost: { type: Number },
       stock: { type: Number },
     });
+
+    const offerSchema = mongoose.Schema({
+    offer: { type: Number },
+    products: [String],
+    price: { type: Number },
+    active: { type: Boolean },
+    });
+
+    const supplierSchema = mongoose.Schema({
+    supplier: {type: String},
+    name: { type: String },
+    contact: { type: String },
+    });
+
+    const orderSchema = mongoose.Schema({
+    order: { type: String },
+    offer: { type: Number },
+    quantity: { type: Number },
+    status: { type: Boolean },
+    });
+
 
      async function Menu() {
       let p = prompt();

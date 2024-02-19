@@ -15,7 +15,34 @@ export async function database() {
         stock: { type: Number },
       });
 
+      const offerSchema = mongoose.Schema({
+        offer: {type: Number},
+        products: [String],
+        price: {type: Number},
+        active: {type: Boolean}
+      });
+
+      const supplierSchema = mongoose.Schema({
+        supplier: [],
+        name: {type: String},
+        contact: {type: String}
+      });
+
+      const orderSchema = mongoose.Schema({
+        order: {type: String},
+        offer: {type: Number},
+        quantity: {type: Number},
+        status: {type: Boolean}
+      })
+
       const ProductsModel = mongoose.model("Products", productSchema);
+
+      const OfferModel = mongoose.model("Offers", offerSchema);
+
+      const supplierModel = mongoose.model("Supplier", supplierSchema);
+
+      const orderModel = mongoose.model("Orders", orderSchema);
+
 
       const { db } = mongoose.connection;
       const productList = db.collection("productList");
