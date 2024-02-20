@@ -8,33 +8,56 @@ try {
     console.log("Connected to MongoDB");
 
     //Schemas 
-    const productSchema = mongoose.Schema({
-      name: { type: String },
-      category: [String],
-      price: { type: Number },
-      cost: { type: Number },
-      stock: { type: Number },
-    });
+      const categorySchema = mongoose.Schema({
+        name: { type: String },
+        description: { type: String },
+      });
 
-    const offerSchema = mongoose.Schema({
-    offer: { type: Number },
-    products: [String],
-    price: { type: Number },
-    active: { type: Boolean },
-    });
+      const supplierSchema = mongoose.Schema({
+        name: { type: String },
+        contact: {
+          name: { type: String },
+          email: { type: String },
+        },
+      });
 
-    const supplierSchema = mongoose.Schema({
-    supplier: {type: String},
-    name: { type: String },
-    contact: { type: String },
-    });
+      const productSchema = mongoose.Schema({
+        name: { type: String },
+        category: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Category",
+        },
+        type: { type: String },
+        price: { type: Number },
+        cost: { type: Number },
+        stock: { type: Number },
+        supplier: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Supplier",
+        },
+      });
 
-    const orderSchema = mongoose.Schema({
-    order: { type: String },
-    offer: { type: Number },
-    quantity: { type: Number },
-    status: { type: Boolean },
-    });
+      const offerSchema = mongoose.Schema({
+        products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
+        price: { type: Number },
+        active: { type: Boolean },
+      });
+
+      const orderSchema = mongoose.Schema({
+        products: [
+          {
+            product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+            quantity: { type: Number, required: true },
+          },
+        ],
+        offer: { type: mongoose.Schema.Types.ObjectId, ref: "Offer" },
+        quantity: { type: Number, required: true },
+        status: {
+          type: String,
+          enum: ["pending", "shipped"],
+          default: "pending",
+        }
+      });
 
 
      async function Menu() {
@@ -50,6 +73,20 @@ try {
         console.log("13.View all sales \n 14. View sum of all profits \n 15. Cancel")
         console.log("\n ---------------------------------------------\n");
         let input = p("Please make a choice by entering a number: ")
+
+        //idé för offers:
+        //"For him & her: Order one top from men's clothing and one top from women's clothing"
+        //Köp tre betala för två
+        
+        //struktur för om någon vill lägga till ny produkt:
+        //"choose category"-> "category not available, do you want to create a new one?" -> "redirecting you to category creation"
+        //"choose category" -> "insert x" -> "you have added x to y category"
+
+        //View products  by supplier -> använd $group
+
+        //Create order for products -> lista alla produktnamn och pris, när någon väljer topp från män eller kvinnor så sker en offer
+
+
 
         switch (input) {
           case "1":
