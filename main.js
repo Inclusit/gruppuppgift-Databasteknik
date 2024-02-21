@@ -97,53 +97,50 @@ try {
 
         switch (input) {
           case "1":
-          
-          console.log("\n --------- Add  new category --------- \n");
-          let addCat = p("Do you wish to add a new category? y/n: ")
+            console.log("\n --------- Add  new category --------- \n");
+            let addCat = p("Do you wish to add a new category? y/n: ");
 
-          if (addCat == "y") {
-            
-            try {let catName = p("Input new category name: ");
-            let catDesc = p("Input category description: ");
+            if (addCat == "y") {
+              try {
+                let catName = p("Input new category name: ");
+                let catDesc = p("Input category description: ");
 
-            let checkExistingCat = await Category.countDocuments({name: catName});
-            
-            if (checkExistingCat > 0) {
-              console.log(`Category ${catName} already exists in database, redirecting you to main menu`);
-              break;
-              
+                let checkExistingCat = await Category.countDocuments({
+                  name: catName,
+                });
+
+                if (checkExistingCat > 0) {
+                  console.log(
+                    `Category ${catName} already exists in database, redirecting you to main menu`
+                  );
+                  break;
+                } else {
+                  await Category.create({
+                    name: catName,
+                    description: catDesc,
+                  });
+
+                  console.log(`\n ${catName} category has been added`);
+                }
+              } catch (error) {
+                console.log("Unable to add new category ", error);
+              }
             } else {
+              console.log("Redirecting you to main menu");
+            }
 
-              await Category.create({
-                name: catName,
-                description: catDesc,
-              });
-
-              console.log(`\n ${catName} category has been added`);
-            };
-            
-
-             } catch (error) {
-            console.log("Unable to add new category ", error)
-          };
-
-          } else {
-            console.log("Redirecting you to main menu")
-          }
-          
-          break;
+            break;
 
           case "2":
             //massa kod
-            
+
             //struktur för om någon vill lägga till ny produkt:
-            //"choose category"-> lista med kategorier 
+            //"choose category"-> lista med kategorier
             //"category not available, do you want to create a new one?" -> "redirecting you to category creation"
 
             //"choose category" -> "insert x" -> "you have added x to y category"
 
             break;
-
 
           case "3":
             const categoryList = await Category.find();
@@ -153,37 +150,69 @@ try {
             });
 
             const chosenCategory = p(
-              "Enter the category name from the list above: "
+              "Enter the category index from the list above: "
             );
 
             if (chosenCategory >= 1 && chosenCategory <= categoryList.length) {
-
-              let chosenCat= categoryList[chosenCategory -1];
-              let productsInCategory = await Products.find({category: chosenCat});
+              let chosenCat = categoryList[chosenCategory - 1];
+              let productsInCategory = await Products.find({
+                category: chosenCat,
+              });
 
               if (productsInCategory.length > 0) {
                 console.log(
                   `\n --------- Products in ${chosenCat.name} --------- \n`
                 );
                 productsInCategory.forEach((product) => {
-                  console.log(`${product.name} - ${product.price} USD \n`)
+                  console.log(`${product.name} - ${product.price} USD \n`);
                 });
-
               } else {
-                console.log(`\nThere are currently no products in ${chosenCat.name}, redirecting you to database`)
-              }; //slut på productsInCategory if-sats
+                console.log(
+                  `\nThere are currently no products in ${chosenCat.name}, redirecting you to database`
+                );
+              } //slut på productsInCategory if-sats
 
               break;
-
-            } else{
-              console.log("\nInvalid input, redirecting you to main menu")
-              
-            }; //Slut på chosenCategory if-sats
+            } else {
+              console.log("\nInvalid input, redirecting you to main menu");
+            } //Slut på chosenCategory if-sats
 
             break;
 
           case "4":
-            //massa kod
+            let suppliersList = await Supplier.find();
+            console.log("\n --------- Available Suppliers --------- \n");
+            suppliersList.forEach((supplier, i) => {
+              console.log(`${i + 1}. ${supplier.name}`);
+            });
+
+            const supplierIndex = p(
+              "Enter the supplier index from the list above: "
+            );
+
+            if (supplierIndex >= 1 && supplierIndex <= suppliersList.length) {
+              let chosenSupplier = suppliersList[supplierIndex - 1];
+              let productsInSupplier = await Products.find({
+                supplier: chosenSupplier._id,
+              });
+
+              if (productsInSupplier.length > 0) {
+                console.log(
+                  `\n --------- Products in ${chosenSupplier.name} --------- \n`
+                );
+                productsInSupplier.forEach((product) => {
+                  console.log(`${product.name} - ${product.price} USD \n`);
+                });
+              } else {
+                console.log(
+                  `\nThere are currently no products in ${chosenSupplier.name}, redirecting you to main menu`
+                );
+              } 
+
+              break;
+            } else {
+              console.log("\nInvalid input, redirecting you to main menu");
+            } 
             break;
 
           case "5":
@@ -211,11 +240,56 @@ try {
             break;
 
           case "11":
-            //massa kod
+            console.log("\n --------- Add  new supplier --------- \n");
+            let addSupplier = p("Do you wish to add a new supplier? y/n: ");
+
+            if (addSupplier == "y") {
+              try {
+                let supplierName = p("Input new supplier name: ");
+                let contactName = p("Input contact person name: ");
+                let contactMail = p("Input contact email: ");
+
+                let checkExistingSupplier = await Supplier.countDocuments({
+                  name: supplierName,
+                });
+
+                if (checkExistingSupplier > 0) {
+                  console.log(
+                    `Supplier ${supplierName} already exists in database, redirecting you to main menu`
+                  );
+                  break;
+                } else {
+                  await Supplier.create({
+                    name: supplierName,
+                    contact: {
+                      name: contactName,
+                      email: contactMail,
+                    },
+                  });
+
+                  console.log(`\n ${supplierName} has been added to suppliers`);
+                }
+              } catch (error) {
+                console.log("Unable to add new supplier ", error);
+              }
+            } else {
+              console.log("Redirecting you to main menu");
+            }
+
             break;
 
           case "12":
-            //massa kod
+            const supplierList = await Supplier.find();
+
+            console.log("\n --------- Suppliers in database --------- \n");
+
+            supplierList.forEach((supplier) => {
+              console.log(`
+            ${supplier.name} \n
+            Contact: ${supplier.contact.name}\n
+            Email: ${supplier.contact.email}\n`);
+            });
+
             break;
 
           case "13":
