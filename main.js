@@ -78,7 +78,7 @@ try {
         console.log("5. View all offers within a price range \n 6. View all offers that contain a product from a specific category")
         console.log("7. View the number of offers based ont he number of it's products in stock \n 8. Create order for products")
         console.log("9. Create order for offers \n 10. Ship orders \n 11. Add a new supplier \n 12. View suppliers")
-        console.log("13.View all sales \n 14. View sum of all profits \n 15. Cancel")
+        console.log("13. View all sales \n 14. View sum of all profits \n 15. Cancel")
         console.log("\n ---------------------------------------------\n");
         let input = p("Please make a choice by entering a number: ")
 
@@ -86,9 +86,10 @@ try {
         //"For him & her: Order one top from men's clothing and one top from women's clothing"
         //Köp tre betala för två <--- Troligtvis mycket lättare än den ovan
         
-        
-
         //View products  by supplier -> använd $group?
+
+        //Punkt 5: Användare för välja mellan färdiginställda ranges, ex. 0-99, 100-199, 200-299. Använd sedan aggregations
+        //Punkt 10: Lista orders, välj order, välj mellan om den ska vara true eller false (shipped/pending)
 
         //Create order for products -> lista alla produktnamn och pris, när någon väljer topp från män eller kvinnor så sker en offer
 
@@ -96,11 +97,45 @@ try {
 
         switch (input) {
           case "1":
-            //massa kod
-            break;
+          
+          console.log("\n --------- Add  new category --------- \n");
+          let addCat = p("Do you wish to add a new category? y/n: ")
+
+          if (addCat == "y") {
+            
+            try {let catName = p("Input new category name: ");
+            let catDesc = p("Input category description: ");
+
+            let checkExistingCat = await Category.countDocuments({name: catName});
+            
+            if (checkExistingCat > 0) {
+              console.log(`Category ${catName} already exists in database, redirecting you to main menu`);
+              break;
+              
+            } else {
+
+              await Category.create({
+                name: catName,
+                description: catDesc,
+              });
+
+              console.log(`\n ${catName} category has been added`);
+            };
+            
+
+             } catch (error) {
+            console.log("Unable to add new category ", error)
+          };
+
+          } else {
+            console.log("Redirecting you to main menu")
+          }
+          
+          break;
 
           case "2":
             //massa kod
+            
             //struktur för om någon vill lägga till ny produkt:
             //"choose category"-> lista med kategorier 
             //"category not available, do you want to create a new one?" -> "redirecting you to category creation"
@@ -111,33 +146,40 @@ try {
 
 
           case "3":
-            const allCategories = await Category.find();
+            const categoryList = await Category.find();
             console.log("\n --------- Available Categories --------- \n");
-            allCategories.forEach((category) => {
-              console.log(`${category.name}`);
+            categoryList.forEach((category, i) => {
+              console.log(`${i + 1}. ${category.name}`);
             });
 
-            const categoryName = p(
+            const chosenCategory = p(
               "Enter the category name from the list above: "
             );
-            const category = await Category.findOne({ name: categoryName });
 
-            if (category) {
-              const productsInCategory = await Products.find({ category });
+            if (chosenCategory >= 1 && chosenCategory <= categoryList.length) {
+
+              let chosenCat= categoryList[chosenCategory -1];
+              let productsInCategory = await Products.find({category: chosenCat});
 
               if (productsInCategory.length > 0) {
-                console.log(`\nProducts in category ${categoryName}:\n`);
+                console.log(
+                  `\n --------- Products in ${chosenCat.name} --------- \n`
+                );
                 productsInCategory.forEach((product) => {
-                  console.log(`${product.name} - Price: ${product.price}`);
+                  console.log(`${product.name} - ${product.price} USD \n`)
                 });
+
               } else {
-                console.log(`No products found in category ${categoryName}`);
-              }
-            } else {
-              console.log(`Category ${categoryName} not found`);
+                console.log(`\nThere are currently no products in ${chosenCat.name}, redirecting you to database`)
+              }; //slut på productsInCategory if-sats
+
               break;
-              //NOTE: Bör läggas in att man blir tillfrågad om man vill lägga till en ny kategori, och dirigeras till punkt 1 i menyn
-            }
+
+            } else{
+              console.log("\nInvalid input, redirecting you to main menu")
+              
+            }; //Slut på chosenCategory if-sats
+
             break;
 
           case "4":
@@ -208,4 +250,5 @@ try {
   console.log("Error connecting to MongoDB:", error);
   
 }
+
 
