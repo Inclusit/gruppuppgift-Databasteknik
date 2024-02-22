@@ -281,7 +281,7 @@ try {
                     console.log(
                       `\n ${productName} has been added to ${chosenCategory.name} category`
                     );
-                  exitOrMenu();
+                  break;
                 } else {
                   console.log("Invalid input, redirecting you to main menu");
                 }
@@ -624,16 +624,16 @@ try {
         } //End of switch/case loop
       } //End of runApp loop
     } //End of async menu function
-    function askUserAction() {
+    function exitOrMenu() {
       let exitOrMenu = 3;
-      while (exitOrMenu != 1) {
-        exitOrMenu = p(
-          "What do you want to do now?\n 1. Main menu \n 2. Exit \n"
-        );
-        if (exitOrMenu == 2) {
+      while (exitOrMenu != 1 && exitOrMenu != 2) {
+        console.log("What do you want to do now?\n 1. Main menu \n 2. Exit \n");
+        exitOrMenu = p("Please make a choice by entering a number: ");
+        if (exitOrMenu == 1) {
           Menu();
-        } else if (exitOrMenu == 1) {
-          console.log("Goodbye!");
+        } else if (exitOrMenu == 2) {
+          console.log("\nGoodbye!\n");
+          process.exit();
         } else {
           console.log("Invalid input, please try again");
         }
