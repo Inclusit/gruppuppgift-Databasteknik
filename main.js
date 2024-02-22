@@ -1,6 +1,8 @@
 import mongoose, { connect } from "mongoose";
 import prompt from "prompt-sync";
 
+let p = prompt();
+
 try {
   const con = await connect("mongodb://127.0.0.1:27017/onlineStore");
 
@@ -68,7 +70,6 @@ try {
     const { db } = mongoose.connection;
 
     async function Menu() {
-      let p = prompt();
       let runApp = true;
 
       while (runApp) {
@@ -135,7 +136,7 @@ try {
             } else {
               console.log("Redirecting you to main menu");
             }
-
+            exitOrMenu();
             break;
 
           case "2":
@@ -282,27 +283,13 @@ try {
                   console.log("Product created: ", productCreated);
                 } else {
                   console.log("Invalid input, redirecting you to main menu");
+                  break;
                 }
               } catch (error) {
                 console.log("Unable to add new product ", error);
               }
             }
-            //massa kod
-
-            //struktur för om någon vill lägga till ny produkt:
-            //"choose category"-> lista med kategorier
-            //"category not available, do you want to create a new one?" -> "redirecting you to category creation"
-
-            //"choose category" -> "insert x" -> "you have added x to y category"
-
-            break;
-
-            //struktur för om någon vill lägga till ny produkt:
-            //"choose category"-> lista med kategorier
-            //"category not available, do you want to create a new one?" -> "redirecting you to category creation"
-
-            //"choose category" -> "insert x" -> "you have added x to y category"
-
+            exitOrMenu();
             break;
 
           case "3":
@@ -339,7 +326,7 @@ try {
             } else {
               console.log("\nInvalid input, redirecting you to main menu");
             } //Slut på chosenCategory if-sats
-
+            exitOrMenu();
             break;
 
           case "4":
@@ -376,30 +363,37 @@ try {
             } else {
               console.log("\nInvalid input, redirecting you to main menu");
             }
+            exitOrMenu();
             break;
 
           case "5":
             //massa kod
+            exitOrMenu();
             break;
 
           case "6":
             //massa kod
+            exitOrMenu();
             break;
 
           case "7":
             //massa kod
+            exitOrMenu();
             break;
 
           case "8":
             //massa kod
+            exitOrMenu();
             break;
 
           case "9":
             //massa kod
+            exitOrMenu();
             break;
 
           case "10":
             //massa kod
+            exitOrMenu();
             break;
 
           case "11":
@@ -438,7 +432,7 @@ try {
             } else {
               console.log("Redirecting you to main menu");
             }
-
+            exitOrMenu();
             break;
 
           case "12":
@@ -452,25 +446,29 @@ try {
             Contact: ${supplier.contact.name}\n
             Email: ${supplier.contact.email}\n`);
             });
-
+            exitOrMenu();
             break;
 
           case "13":
             //massa kod
+            exitOrMenu();
             break;
 
           case "14":
             //massa kod
+            exitOrMenu();
             break;
 
           case "15":
             runApp = false;
+            exitOrMenu();
             break;
 
           default:
             console.log(
               "\n Invalid input \n Please choose an option between 1-15 \n"
             );
+            exitOrMenu();
             break;
         } //End of switch/case loop
       } //End of runApp loop
@@ -481,3 +479,33 @@ try {
 } catch (error) {
   console.log("Error connecting to MongoDB:", error);
 }
+async function exitOrMenu() {
+  console.log("Return to main menu or exit?");
+  console.log("\n1. Main menu\n2. Exit\n");
+  let exitOrMenuInput = p(" ");
+  while (exitOrMenuInput != "1" && exitOrMenuInput != "2") {
+    exitOrMenuInput = p(
+      "Return to main menu or exit?\n1. Main menu\n2. Exit\n"
+    );
+  }
+  if (exitOrMenuInput == "1") {
+    Menu();
+  } else if (exitOrMenuInput == "2") {
+    console.log("\nExiting program");
+    process.exit();
+  }
+}
+
+// async function exitOrMenu() {
+//   let exit = p("Do you wish to exit? y/n: ");
+//   while (exit !== "y" && exit !== "n") {
+//     console.log("Invalid input, please try again");
+//     exit = p("Do you wish to exit? y/n: ");
+//   }
+//   if (exit == "y") {
+//     console.log("Exiting program");
+//     process.exit();
+//   } else {
+//     Menu();
+//   }
+// }
