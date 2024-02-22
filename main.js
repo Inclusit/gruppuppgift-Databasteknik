@@ -281,6 +281,7 @@ try {
                     console.log(
                       `\n ${productName} has been added to ${chosenCategory.name} category`
                     );
+                  exitOrMenu();
                 } else {
                   console.log("Invalid input, redirecting you to main menu");
                 }
