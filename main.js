@@ -81,7 +81,7 @@ try {
           "5. View all offers within a price range \n 6. View all offers that contain a product from a specific category"
         );
         console.log(
-          "7. View the number of offers based ont he number of it's products in stock \n 8. Create order for products"
+          "7. View the number of offers based on the number of it's products in stock \n 8. Create order for products"
         );
         console.log(
           "9. Create order for offers \n 10. Ship orders \n 11. Add a new supplier \n 12. View suppliers"
