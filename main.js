@@ -68,7 +68,7 @@ try {
     const Order = mongoose.model("Orders", orderSchema);
 
     const { db } = mongoose.connection;
-
+    let p = prompt();
     async function Menu() {
       let runApp = true;
 
@@ -81,7 +81,7 @@ try {
           "5. View all offers within a price range \n 6. View all offers that contain a product from a specific category"
         );
         console.log(
-          "7. View the number of offers based on the number of it's products in stock \n 8. Create order for products"
+          "7. View the number of offers based ont he number of it's products in stock \n 8. Create order for products"
         );
         console.log(
           "9. Create order for offers \n 10. Ship orders \n 11. Add a new supplier \n 12. View suppliers"
@@ -104,6 +104,8 @@ try {
         //Create order for products -> lista alla produktnamn och pris, när någon väljer topp från män eller kvinnor så sker en offer
 
         switch (input) {
+          case "1":
+          // addNewCategory(p);
           case "1":
             console.log("\n --------- Add  new category --------- \n");
             let addCat = p("Do you wish to add a new category? y/n: ");
@@ -136,13 +138,161 @@ try {
             } else {
               console.log("Redirecting you to main menu");
             }
-            exitOrMenu();
+
             break;
 
           case "2":
-            //massa kod
             console.log("\n --------- Add new product --------- \n");
             let addProduct = p("Do you wish to add a new product? y/n: ");
+
+            if (addProduct == "y") {
+              try {
+                let productName = "";
+                while (!productName) {
+                  productName = p("Input product name: ");
+                  if (!productName) {
+                    console.log(
+                      "Product name cannot be empty. Please try again."
+                    );
+                  }
+                }
+
+                let productType = "";
+                while (!productType) {
+                  productType = p("Input product type: ");
+                  if (!productType) {
+                    console.log(
+                      "Product type cannot be empty. Please try again."
+                    );
+                  }
+                }
+
+                let productPrice = NaN;
+                while (isNaN(productPrice)) {
+                  productPrice = parseFloat(p("Input product price: "));
+                  if (isNaN(productPrice)) {
+                    console.log(
+                      "Invalid input for product price. Please enter a valid number."
+                    );
+                  }
+                }
+
+                let productCost = NaN;
+                while (isNaN(productCost)) {
+                  productCost = parseFloat(p("Input product cost: "));
+                  if (isNaN(productCost)) {
+                    console.log(
+                      "Invalid input for product cost. Please enter a valid number."
+                    );
+                  }
+                }
+
+                let productStock = NaN;
+                while (isNaN(productStock)) {
+                  productStock = parseInt(p("Input product stock: "));
+                  if (isNaN(productStock)) {
+                    console.log(
+                      "Invalid input for product stock. Please enter a valid number."
+                    );
+                  }
+                }
+
+                const categoryList = await Category.find();
+                console.log("\n --------- Available Categories --------- \n");
+                categoryList.forEach((category, i) => {
+                  console.log(`${i + 1}. ${category.name}`);
+                });
+                console.log(`${categoryList.length + 1}. Add new category`);
+
+                let chosenCategory = "x";
+                while (
+                  isNaN(chosenCategory) ||
+                  chosenCategory < 1 ||
+                  chosenCategory > categoryList.length + 1
+                ) {
+                  chosenCategory = p("Choose category: ");
+                  if (isNaN(chosenCategory)) {
+                    console.log("Invalid input, please try again");
+                  }
+                }
+
+                if (
+                  chosenCategory >= 1 &&
+                  chosenCategory <= categoryList.length
+                ) {
+                  chosenCategory = categoryList[chosenCategory - 1];
+                } else if (chosenCategory == categoryList.length + 1) {
+                  let addCat = p("Do you wish to add a new category? y/n: ");
+
+                  if (addCat == "y") {
+                    try {
+                      let catName = p("Input new category name: ");
+                      let catDesc = p("Input category description: ");
+
+                      let checkExistingCat = await Category.countDocuments({
+                        name: catName,
+                      });
+
+                      if (checkExistingCat > 0) {
+                        console.log(
+                          ` Category ${catName} already exists in database, redirecting you to main menu`
+                        );
+                        return;
+                      } else {
+                        await Category.create({
+                          name: catName,
+                          description: catDesc,
+                        });
+
+                        console.log(` \n ${catName} category has been added`);
+                      }
+                    } catch (error) {
+                      console.log("Unable to add new category ", error);
+                    }
+                  } else {
+                    console.log("Redirecting you to main menu");
+                  }
+                }
+                let supplierList = await Supplier.find();
+                console.log("\n --------- Available Suppliers --------- \n");
+                supplierList.forEach((supplier, i) => {
+                  console.log(`${i + 1}. ${supplier.name}`);
+                });
+
+                let chosenSupplier = parseInt(p("Choose supplier: "));
+
+                if (
+                  chosenSupplier >= 1 &&
+                  chosenSupplier <= supplierList.length
+                ) {
+                  chosenSupplier = supplierList[chosenSupplier - 1];
+
+                  let productCreated = await Products.create({
+                    name: productName,
+                    category: chosenCategory._id,
+                    type: productType,
+                    price: productPrice,
+                    cost: productCost,
+                    stock: productStock,
+                    supplier: chosenSupplier,
+                  });
+
+                  productCreated &&
+                    console.log(
+                      `\n ${productName} has been added to ${chosenCategory.name} category`
+                    );
+                } else {
+                  console.log("Invalid input, redirecting you to main menu");
+                }
+              } catch (error) {
+                console.log("Unable to add new product ", error);
+              }
+            }
+            //massa kod
+
+            //struktur för om någon vill lägga till ny produkt:
+            //"choose category"-> lista med kategorier
+            //"category not available, do you want to create a new one?" -> "redirecting you to category creation"
 
             if (addProduct == "y") {
               try {
@@ -326,7 +476,7 @@ try {
             } else {
               console.log("\nInvalid input, redirecting you to main menu");
             } //Slut på chosenCategory if-sats
-            exitOrMenu();
+
             break;
 
           case "4":
@@ -473,39 +623,59 @@ try {
         } //End of switch/case loop
       } //End of runApp loop
     } //End of async menu function
+    function askUserAction() {
+      let exitOrMenu = 3;
+      while (exitOrMenu != 1) {
+        exitOrMenu = p(
+          "What do you want to do now?\n 1. Main menu \n 2. Exit \n"
+        );
+        if (exitOrMenu == 2) {
+          Menu();
+        } else if (exitOrMenu == 1) {
+          console.log("Goodbye!");
+        } else {
+          console.log("Invalid input, please try again");
+        }
+      }
+    }
 
     Menu();
   } //End of if-function
 } catch (error) {
   console.log("Error connecting to MongoDB:", error);
 }
-async function exitOrMenu() {
-  console.log("Return to main menu or exit?");
-  console.log("\n1. Main menu\n2. Exit\n");
-  let exitOrMenuInput = p(" ");
-  while (exitOrMenuInput != "1" && exitOrMenuInput != "2") {
-    exitOrMenuInput = p(
-      "Return to main menu or exit?\n1. Main menu\n2. Exit\n"
-    );
-  }
-  if (exitOrMenuInput == "1") {
-    Menu();
-  } else if (exitOrMenuInput == "2") {
-    console.log("\nExiting program");
-    process.exit();
-  }
-}
 
-// async function exitOrMenu() {
-//   let exit = p("Do you wish to exit? y/n: ");
-//   while (exit !== "y" && exit !== "n") {
-//     console.log("Invalid input, please try again");
-//     exit = p("Do you wish to exit? y/n: ");
-//   }
-//   if (exit == "y") {
-//     console.log("Exiting program");
-//     process.exit();
+// async function addNewCategory(p) {
+//   console.log("\n --------- Add new category --------- \n");
+
+//   let addCategory = p("Do you wish to add a new category? y/n: ");
+
+//   if (addCategory == "y") {
+//     try {
+//       let categoryName = p("Input new category name: ");
+//       let categoryDesc = p("Input category description: ");
+
+//       let checkExistingCategory = await Category.countDocuments({
+//         name: categoryName,
+//       });
+
+//       if (checkExistingCategory > 0) {
+//         console.log(
+//           `Category ${categoryName} already exists in database, redirecting you to main menu`
+//         );
+//         return;
+//       } else {
+//         await Category.create({
+//           name: categoryName,
+//           description: categoryDesc,
+//         });
+
+//         console.log(`\n ${categoryName} category has been added`);
+//       }
+//     } catch (error) {
+//       console.log("Unable to add new category ", error);
+//     }
 //   } else {
-//     Menu();
+//     console.log("Redirecting you to main menu");
 //   }
 // }
