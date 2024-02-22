@@ -43,6 +43,16 @@ try {
       products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
       price: { type: Number },
       active: { type: Boolean },
+      inStock: {
+        type: [
+          {
+            product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+            status: { type: Boolean, default: false },
+          },
+        ],
+        default: [],
+      },
+      bothInStock: { type: Boolean, default: false },
     });
 
     const orderSchema = mongoose.Schema({
