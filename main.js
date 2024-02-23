@@ -726,7 +726,20 @@ try {
               {
                 $group: {
                   _id: null,
-                  totalProfit: { $sum: "$total_profit" },
+                  totalRevenue: { $sum: "$total_revenue" },
+                  totalCost: { $sum: "$total_cost" },
+                },
+              },
+              {
+                $project: {
+                  totalProfit: {
+                    $subtract: [
+                      "$totalRevenue",
+                      {
+                        $multiply: ["$totalCost", 0.7], // 70% of the cost as profit
+                      },
+                    ],
+                  },
                 },
               },
             ]);
@@ -757,12 +770,31 @@ try {
                 {
                   $group: {
                     _id: "$productInfo.name",
-                    totalProfit: { $sum: "$total_profit" },
+                    totalRevenue: {
+                      $sum: {
+                        $multiply: ["$products.quantity", "$productInfo.price"],
+                      },
+                    },
+                    totalCost: {
+                      $sum: {
+                        $multiply: ["$products.quantity", "$productInfo.cost"],
+                      },
+                    },
                   },
                 },
                 {
                   $project: {
-                    totalProfit: { $round: ["$totalProfit", 2] },
+                    totalProfit: {
+                      $round: [
+                        {
+                          $subtract: [
+                            "$totalRevenue",
+                            { $multiply: ["$totalCost", 0.7] }, // 70% of the cost as profit
+                          ],
+                        },
+                        2, // Specify the number of decimal places
+                      ],
+                    },
                   },
                 },
               ]);
@@ -783,7 +815,6 @@ try {
 
           case "15":
             runApp = false;
-            exitOrMenu();
             break;
 
           default:
@@ -815,39 +846,4 @@ try {
   } //End of if-function
 } catch (error) {
   console.log("Error connecting to MongoDB:", error);
-}
-
-// async function addNewCategory(p) {
-//   console.log("\n --------- Add new category --------- \n");
-
-//   let addCategory = p("Do you wish to add a new category? y/n: ");
-
-//   if (addCategory == "y") {
-//     try {
-//       let categoryName = p("Input new category name: ");
-//       let categoryDesc = p("Input category description: ");
-
-//       let checkExistingCategory = await Category.countDocuments({
-//         name: categoryName,
-//       });
-
-//       if (checkExistingCategory > 0) {
-//         console.log(
-//           `Category ${categoryName} already exists in database, redirecting you to main menu`
-//         );
-//         return;
-//       } else {
-//         await Category.create({
-//           name: categoryName,
-//           description: categoryDesc,
-//         });
-
-//         console.log(`\n ${categoryName} category has been added`);
-//       }
-//     } catch (error) {
-//       console.log("Unable to add new category ", error);
-//     }
-//   } else {
-//     console.log("Redirecting you to main menu");
-//   }
-// }
+};
