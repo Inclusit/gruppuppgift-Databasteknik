@@ -40,6 +40,16 @@ export async function database() {
         products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
         price: { type: Number },
         active: { type: Boolean },
+        inStock: {
+          type: [
+            {
+              product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+              status: { type: Boolean, default: false },
+            },
+          ],
+          default: [],
+        },
+        bothInStock: { type: Boolean, default: false },
       });
 
       const orderSchema = mongoose.Schema({
@@ -131,7 +141,38 @@ export async function database() {
           console.log("An error occurred while adding categories", error);
         }
       }
+      if (Offer) {
+        try {
+          let offersData = [
+            {
+              products: [],
+              price: 100,
+              active: true,
+              inStock: [
+                {
+                  product: ObjectId("PRODUCT_ID_1"),
+                  status: (await Products.findById("PRODUCT_ID_1")).stock > 0,
+                },
+                {
+                  product: ObjectId("PRODUCT_ID_2"),
+                  status: (await Products.findById("PRODUCT_ID_2")).stock > 0,
+                },
+              ],
+              bothInStock: false,
+            },
+          ];
 
+          const countOffers = await Offer.countDocuments();
+          console.log("Number of existing offers:", countOffers);
+
+          if (countOffers === 0) {
+            await Offer.insertMany(offersData);
+            console.log("Example offers have been inserted into the database.");
+          }
+        } catch (error) {
+          console.log("An error occurred while adding example offers:", error);
+        }
+      }
       if (Products) {
         try {
           let productsData = [
@@ -252,6 +293,7 @@ export async function database() {
               supplier: await Supplier.findOne({ name: "supplier_2" }),
             },
           ];
+
           const countPre = await Products.countDocuments();
           console.log(
             "Number of repeated productinformation skipped:",
