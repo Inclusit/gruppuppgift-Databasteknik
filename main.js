@@ -44,19 +44,22 @@ try {
     });
 
     const orderSchema = mongoose.Schema({
+      offer: { type: mongoose.Schema.Types.ObjectId, ref: "Offer" },
       products: [
         {
-          product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+          product: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+          },
           quantity: { type: Number, required: true },
         },
       ],
-      offer: { type: mongoose.Schema.Types.ObjectId, ref: "Offer" },
-      quantity: { type: Number, required: true },
-      status: {
-        type: String,
-        enum: ["pending", "shipped"],
-        default: "pending",
-      },
+      total: Number,
+      quantity: Number,
+      status: String, //"pending"/"shipped"
+      type: String,
+      total_revenue: Number,
+      total_profit: Number,
     });
 
     const Category = mongoose.model("Categories", categorySchema);
@@ -80,7 +83,7 @@ try {
           "5. View all offers within a price range \n 6. View all offers that contain a product from a specific category"
         );
         console.log(
-          "7. View the number of offers based ont he number of it's products in stock \n 8. Create order for products"
+          "7. View the number of offers based on the number of it's products in stock \n 8. Create order for products"
         );
         console.log(
           "9. Create order for offers \n 10. Ship orders \n 11. Add a new supplier \n 12. View suppliers"
@@ -297,14 +300,6 @@ try {
 
             break;
 
-            //struktur för om någon vill lägga till ny produkt:
-            //"choose category"-> lista med kategorier
-            //"category not available, do you want to create a new one?" -> "redirecting you to category creation"
-
-            //"choose category" -> "insert x" -> "you have added x to y category"
-
-            break;
-
           case "3":
             const categoryList = await Category.find();
             console.log("\n --------- Available Categories --------- \n");
@@ -391,7 +386,109 @@ try {
             break;
 
           case "8":
-            //massa kod
+            console.log("\n --------- Create order --------- \n");
+
+            const makeOrder = p("Do you want to make an order? y/n: ");
+            console.log("");
+
+            if (makeOrder === "y") {
+              let shoppingCart = [];
+              let showProducts = await Products.find(
+                {},
+                "name price cost stock"
+              );
+              while (true) {
+                console.log("--------- Product list ---------");
+
+                try {
+                  showProducts.forEach((product, i) => {
+                    console.log(
+                      `${i + 1}. ${product.name} - ${product.price} USD`
+                    );
+                  });
+
+                  console.log("");
+                  const productIndex = p(
+                    "Choose a product by entering its index (X to finish): "
+                  );
+
+                  if (productIndex === "x") {
+                    break;
+                  }
+
+                  if (
+                    productIndex >= 1 &&
+                    productIndex <= showProducts.length
+                  ) {
+                    const selectedProduct = showProducts[productIndex - 1];
+
+                    const quantity = parseInt(p("Enter the quantity: "));
+
+                    if (quantity > 0 && quantity <= selectedProduct.stock) {
+                      shoppingCart.push({
+                        product: selectedProduct._id,
+                        quantity: quantity,
+                        name: selectedProduct.name,
+                      });
+                      console.log(
+                        `Added ${quantity} units of ${selectedProduct.name} to the order.`
+                      );
+                    } else {
+                      console.log(
+                        "Invalid quantity or insufficient stock. Please try again."
+                      );
+                    }
+                  } else {
+                    console.log("Invalid product index. Please try again.");
+                  }
+                } catch (error) {
+                  console.log("Error fetching products: ", error);
+                }
+              }
+
+              if (shoppingCart.length > 0) {
+                const { totalRevenue, totalCost } = shoppingCart.reduce(
+                  (totals, product) => {
+                    const selectedProduct = showProducts.find((p) =>
+                      p._id.equals(product.product)
+                    );
+                    totals.totalRevenue +=
+                      selectedProduct.price * product.quantity;
+                    totals.totalCost += selectedProduct.cost * product.quantity;
+                    return totals;
+                  },
+                  { totalRevenue: 0, totalCost: 0 }
+                );
+
+                const totalProfit = totalRevenue - totalCost;
+
+                const order = await Order.create({
+                  products: shoppingCart.map((product) => ({
+                    product: product.product,
+                    quantity: product.quantity,
+                  })),
+                  quantity: shoppingCart.reduce(
+                    (total, product) => total + product.quantity,
+                    0
+                  ),
+                  status: "pending", // default status
+                  total_revenue: totalRevenue,
+                  total_profit: totalProfit,
+                });
+
+                console.log(
+                  "Order created successfully with the following products:"
+                );
+                shoppingCart.forEach((product) => {
+                  console.log(`${product.quantity} units of ${product.name}`);
+                });
+              } else {
+                console.log(
+                  "No products added to the order. Order creation failed."
+                );
+              }
+            }
+
             break;
 
           case "9":
@@ -460,7 +557,63 @@ try {
             break;
 
           case "14":
-            //massa kod
+            console.log("\n --------- Sum of all profits --------- \n");
+            const showProfits = await Order.aggregate([
+              {
+                $group: {
+                  _id: null,
+                  totalProfit: { $sum: "$total_profit" },
+                },
+              },
+            ]);
+
+            console.log(
+              `Total profit generated: ${showProfits[0].totalProfit} USD`
+            );
+            let showDetailedProfits = p(
+              "Would you want to see a detailed breakdown? y/n: "
+            );
+
+            if (showDetailedProfits === "y") {
+              const detailedProfits = await Order.aggregate([
+                {
+                  $unwind: "$products",
+                },
+                {
+                  $lookup: {
+                    from: "products",
+                    localField: "products.product",
+                    foreignField: "_id",
+                    as: "productInfo",
+                  },
+                },
+                {
+                  $unwind: "$productInfo",
+                },
+                {
+                  $group: {
+                    _id: "$productInfo.name",
+                    totalProfit: { $sum: "$total_profit" },
+                  },
+                },
+                {
+                  $project: {
+                    totalProfit: { $round: ["$totalProfit", 2] },
+                  },
+                },
+              ]);
+
+              console.log("\n --------- Profit breakdown --------- \n");
+              detailedProfits.forEach((productProfit) => {
+                console.log(
+                  `${productProfit._id}: Profit - ${productProfit.totalProfit} USD`
+                );
+              });
+            } else {
+              console.log("Redirecting you to main menu");
+              break;
+            }
+
             break;
 
           case "15":

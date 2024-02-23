@@ -43,19 +43,19 @@ export async function database() {
       });
 
       const orderSchema = mongoose.Schema({
+        offer: { type: mongoose.Schema.Types.ObjectId, ref: "Offer" },
         products: [
           {
             product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
             quantity: { type: Number, required: true },
           },
         ],
-        offer: { type: mongoose.Schema.Types.ObjectId, ref: "Offer" },
-        quantity: { type: Number, required: true },
-        status: {
-          type: String,
-          enum: ["pending", "shipped"],
-          default: "pending",
-        },
+        total: Number,
+        quantity: Number,
+        status: String, //"pending"/"shipped"
+        type: String,
+        total_revenue: Number,
+        total_profit: Number,
       });
 
       const Category = mongoose.model("Categories", categorySchema);
@@ -263,6 +263,37 @@ export async function database() {
           }
         } catch (error) {
           console.log("An error occurred", error);
+        }
+      }
+
+      if (Offer) {
+        try {
+          let offerData = [
+            {
+              products: [
+                "Mens Casual Slim Fit",
+                "Opna Women's Short Sleeve Moisture",
+              ],
+              price: 65,
+              active: True,
+            },
+            {
+              products: [
+                "White Gold Plated Princess",
+                "Solid Gold Petite Micropave",
+              ],
+              price: 50,
+              active: True,
+            },
+          ];
+
+          const countOffers = await Offer.countDocuments();
+
+          if (countOffers === 0) {
+            await Offer.insertMany(offerData);
+          }
+        } catch (error) {
+          console.log("An error occurred while applying offers", error);
         }
       }
     }
