@@ -40,6 +40,7 @@ try {
     });
 
     const offerSchema = mongoose.Schema({
+      name: { type: String },
       products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
       price: { type: Number },
       active: { type: Boolean },
@@ -533,16 +534,103 @@ try {
 
           case "5":
             //massa kod
+            console.log(
+              "\n --------- Offers within a price range --------- \n"
+            );
+            let minPrice = parseFloat(p("Enter minimum price: "));
+            let maxPrice = parseFloat(p("Enter maximum price: "));
+
+            let offersInRange = await Offer.find({
+              price: { $gte: minPrice, $lte: maxPrice },
+            });
+            // console.log(offersInRange);
+            if (offersInRange.length > 0) {
+              console.log(
+                `\n --------- Offers between ${minPrice} and ${maxPrice} --------- \n`
+              );
+              // console.log(offersInRange);
+              offersInRange.forEach((offer, i) => {
+                // console.log(offer);
+                console.log(
+                  `${offer.name}: ${offer.products.join(" + ")}, Price: ${
+                    offer.price
+                  }\n`
+                );
+              });
+            } else {
+              console.log(
+                `\nThere are currently no offers between ${minPrice} and ${maxPrice}, redirecting you to main menu`
+              );
+            }
             exitOrMenu();
             break;
 
           case "6":
-            //massa kod
+            console.log("\n --------- Offers by category --------- \n");
+            let categoriesList = await Category.find();
+            console.log("\n --------- Available Categories --------- \n");
+            categoriesList.forEach((category, i) => {
+              console.log(`${i + 1}. ${category.name}`);
+            });
+
+            let chosenCategoryInput = p(
+              "Enter the category index from the list above: "
+            );
+
+            if (
+              chosenCategoryInput >= 1 &&
+              chosenCategoryInput <= categoriesList.length
+            ) {
+              let chosenCategory = categoriesList[chosenCategoryInput - 1];
+              let offersByCategory = await Offer.find({
+                categories: chosenCategory._id,
+              });
+
+              let offers = await Offer.find();
+              console.log("offers", offers);
+              console.log("offers by category", offersByCategory);
+              offers.name && console.log("offers name", offers.name);
+
+              if (offersByCategory.length > 0) {
+                console.log(
+                  `\n --------- Offers containing products from ${chosenCategory.name} --------- \n`
+                );
+                offersByCategory.forEach((offer) => {
+                  console.log(
+                    `\nName: ${offer.name}\nOffer ID: ${offer._id} \n Price: ${offer.price}\n`
+                  );
+                });
+              } else {
+                console.log(
+                  `\nThere are currently no offers containing products from ${chosenCategory.name}, redirecting you to main menu`
+                );
+              }
+            } else {
+              console.log("\nInvalid input, redirecting you to main menu");
+            }
+
             exitOrMenu();
             break;
 
           case "7":
-            //massa kod
+            console.log("\n --------- Offers by stock --------- \n");
+            let offersByStock = await Offer.find({
+              inStock: { $elemMatch: { status: true } },
+            });
+
+            if (offersByStock.length > 0) {
+              console.log(
+                `\n --------- Offers containing products in stock --------- \n`
+              );
+              offersByStock.forEach((offer) => {
+                console.log(`Offer: ${offer.name} \n Price: ${offer.price}`);
+              });
+            } else {
+              console.log(
+                `\nThere are currently no offers containing products in stock, redirecting you to main menu`
+              );
+            }
+
             exitOrMenu();
             break;
 
