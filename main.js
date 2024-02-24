@@ -69,6 +69,7 @@ try {
       ],
       total: Number,
       quantity: Number,
+      details: String,
       status: String, //"pending"/"shipped"
       type: String,
       total_revenue: Number,
@@ -108,17 +109,6 @@ try {
         );
         console.log("\n ---------------------------------------------\n");
         let input = p("Please make a choice by entering a number: ");
-
-        //idé för offers:
-        //"For him & her: Order one top from men's clothing and one top from women's clothing"
-        //Köp tre betala för två <--- Troligtvis mycket lättare än den ovan
-
-        //View products  by supplier -> använd $group?
-
-        //Punkt 5: Användare för välja mellan färdiginställda ranges, ex. 0-99, 100-199, 200-299. Använd sedan aggregations
-        //Punkt 10: Lista orders, välj order, välj mellan om den ska vara true eller false (shipped/pending)
-
-        //Create order for products -> lista alla produktnamn och pris, när någon väljer topp från män eller kvinnor så sker en offer
 
         switch (input) {
           case "1":
@@ -304,11 +294,6 @@ try {
                 console.log("Unable to add new product ", error);
               }
             }
-            //massa kod
-
-            //struktur för om någon vill lägga till ny produkt:
-            //"choose category"-> lista med kategorier
-            //"category not available, do you want to create a new one?" -> "redirecting you to category creation"
 
             if (addProduct == "y") {
               try {
@@ -533,7 +518,6 @@ try {
             break;
 
           case "5":
-            //massa kod
             console.log(
               "\n --------- Offers within a price range --------- \n"
             );
@@ -711,6 +695,8 @@ try {
 
                 const totalProfit = totalRevenue - totalCost;
 
+                const orderDetails = p("Enter order details: ")
+
                 const order = await Order.create({
                   products: shoppingCart.map((product) => ({
                     product: product.product,
@@ -720,6 +706,7 @@ try {
                     (total, product) => total + product.quantity,
                     0
                   ),
+                  details: orderDetails,
                   status: "pending", // default status
                   total_revenue: totalRevenue,
                   total_profit: totalProfit,
@@ -738,7 +725,7 @@ try {
               }
             }
 
-            exitOrMenu();
+            /* exitOrMenu(); */
             break;
 
           case "9":
@@ -747,8 +734,82 @@ try {
             break;
 
           case "10":
-            //massa kod
-            exitOrMenu();
+            console.log("\n--------- Ship orders ---------\n");
+
+            const showOrders = await Order.find();
+
+            // Skriv ut varje order med unikt index och struktur
+            for (let i = 0; i < showOrders.length; i++) {
+              const order = showOrders[i];
+
+              console.log(`Index ID: ${i + 1}`);
+              console.log(`Order ID: ${order._id}`);
+
+              // Hämta och skriv ut produkter i ordern
+              const productsString = await Promise.all(
+                order.products.map(async (productData) => {
+                  const productId = productData.product;
+                  const product = await Products.findById(productId);
+
+                  if (product) {
+                    return `${product.name} (Quantity: ${productData.quantity})`;
+                  }
+                })
+              );
+
+              console.log(`Products: ${productsString.join(", ")}`);
+              console.log(`Details: ${order.details}`)
+              console.log(`Created At: ${order.createdAt.toLocaleString()}`);
+              console.log(`Status: ${order.status}`);
+              console.log("-------------------------");
+            }
+
+            const changeShipStatus = p(
+              "Enter the order index of the order you want to ship (X to cancel): "
+            );
+
+            if (changeShipStatus === "x") {
+              console.log(
+                "\nOperation canceled. Redirecting you to the main menu.\n"
+              );
+              break;
+            }
+
+            const orderIndexToShip = changeShipStatus - 1;
+            const orderToShip = showOrders[orderIndexToShip];
+
+            if (!orderToShip) {
+              console.log(
+                "\nOrder not found. Redirecting you to the main menu.\n"
+              );
+              break;
+            }
+
+            if (orderToShip.status === "shipped") {
+              console.log(
+                "\nOrder is already shipped. Redirecting you to the main menu.\n"
+              );
+              break;
+            }
+
+            // Uppdatera status och spara den uppdaterade ordern
+            orderToShip.status = "shipped";
+            await orderToShip.save();
+
+            // Uppdatera lagernivåerna för produkterna i ordern
+            for (const productData of orderToShip.products) {
+              const productId = productData.product;
+              const product = await Products.findById(productId);
+
+              if (product) {
+                product.stock -= productData.quantity;
+                await product.save();
+              }
+            }
+
+            console.log("\nOrder has been shipped successfully!\n");
+            console.log("-------------------------");
+            /* exitOrMenu(); */
             break;
 
           case "11":
@@ -805,28 +866,28 @@ try {
             break;
 
           case "13":
-          const orders = await Order.find(
-            {},
-            "createdAt status total_revenue products"
-          );
+            const orders = await Order.find(
+              {},
+              "createdAt status total_revenue products"
+            );
 
-          for (const order of orders) {
-            console.log(`Order ${orders.indexOf(order) + 1}:`);
-            console.log(`  Created at: ${order.createdAt.toLocaleString()}`);
-            console.log("  Products:");
+            for (const order of orders) {
+              console.log(`Order ${orders.indexOf(order) + 1}:`);
+              console.log(`  Created at: ${order.createdAt.toLocaleString()}`);
+              console.log("  Products:");
 
-            for (const productData of order.products) {
-              const productId = productData.product;
-              const product = await Products.findById(productId);
-              console.log(
-                `    - ${product.name} (Quantity: ${productData.quantity})`
-              );
+              for (const productData of order.products) {
+                const productId = productData.product;
+                const product = await Products.findById(productId);
+                console.log(
+                  `    - ${product.name} (Quantity: ${productData.quantity})`
+                );
+              }
+
+              console.log(`  Status: ${order.status}`);
+              console.log(`  Total Revenue: ${order.total_revenue} USD`);
+              console.log("-------------------------");
             }
-
-            console.log(`  Status: ${order.status}`);
-            console.log(`  Total Revenue: ${order.total_revenue} USD`);
-            console.log("-------------------------");
-          }
 
             exitOrMenu();
             break;

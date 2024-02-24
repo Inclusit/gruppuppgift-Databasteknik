@@ -62,6 +62,7 @@ export async function database() {
         ],
         total: Number,
         quantity: Number,
+        details: String,
         status: String, //"pending"/"shipped"
         type: String,
         total_revenue: Number,
