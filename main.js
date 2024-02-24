@@ -607,7 +607,9 @@ try {
                 `\n --------- Offers containing products in stock --------- \n`
               );
               offersByStock.forEach((offer) => {
-                console.log(`Offer: ${offer.name} \n Price: ${offer.price}`);
+                console.log(
+                  `\nOffer: ${offer.name} \n Price: ${offer.price}\n`
+                );
               });
             } else {
               console.log(
@@ -641,9 +643,9 @@ try {
                   });
 
                   console.log("");
-                  const productIndex = p(
+                  let productIndex = p(
                     "Choose a product by entering its index (X to finish): "
-                  );
+                  ).toLowerCase();
 
                   if (productIndex === "x") {
                     break;
@@ -668,7 +670,7 @@ try {
                       );
                     } else {
                       console.log(
-                        "Invalid quantity or insufficient stock. Please try again."
+                        "\nInvalid quantity or insufficient stock. Please try again.\n"
                       );
                     }
                   } else {
@@ -695,8 +697,6 @@ try {
 
                 const totalProfit = totalRevenue - totalCost;
 
-                const orderDetails = p("Enter order details: ")
-
                 const order = await Order.create({
                   products: shoppingCart.map((product) => ({
                     product: product.product,
@@ -706,7 +706,6 @@ try {
                     (total, product) => total + product.quantity,
                     0
                   ),
-                  details: orderDetails,
                   status: "pending", // default status
                   total_revenue: totalRevenue,
                   total_profit: totalProfit,
@@ -725,11 +724,104 @@ try {
               }
             }
 
-            /* exitOrMenu(); */
+            exitOrMenu();
             break;
 
           case "9":
-            //massa kod
+            console.log("\n --------- Create order --------- \n");
+
+            const orderConfirmation = p("Do you want to make an order? y/n: ");
+            console.log("");
+
+            if (orderConfirmation === "y") {
+              let shoppingCart = [];
+              let showOffers = await Offer.find({}, "name price cost stock");
+              while (true) {
+                console.log("--------- Offer list ---------");
+
+                try {
+                  showOffers.forEach((offer, i) => {
+                    console.log(`${i + 1}. ${offer.name} - ${offer.price} USD`);
+                  });
+
+                  console.log("");
+                  const offerIndex = p(
+                    "Choose an offer by entering its index (X to finish): "
+                  ).toLowerCase();
+
+                  if (offerIndex === "x") {
+                    break;
+                  }
+
+                  if (offerIndex >= 1 && offerIndex <= showOffers.length) {
+                    const selectedOffer = showOffers[offerIndex - 1];
+
+                    const quantity = parseInt(p("Enter the quantity: "));
+
+                    if (quantity > 0 && quantity <= selectedOffer.stock) {
+                      shoppingCart.push({
+                        offer: selectedOffer._id,
+                        quantity: quantity,
+                        name: selectedOffer.name,
+                      });
+                      console.log(
+                        `Added ${quantity} units of ${selectedOffer.name} to the order.`
+                      );
+                    } else {
+                      console.log(
+                        "\nInvalid quantity or insufficient stock. Please try again.\n"
+                      );
+                    }
+                  } else {
+                    console.log("Invalid offer index. Please try again.");
+                  }
+                } catch (error) {
+                  console.log("Error fetching offers: ", error);
+                }
+              }
+
+              if (shoppingCart.length > 0) {
+                const { totalRevenue, totalCost } = shoppingCart.reduce(
+                  (totals, offer) => {
+                    const selectedOffer = showOffers.find((o) =>
+                      o._id.equals(offer.offer)
+                    );
+                    totals.totalRevenue += selectedOffer.price * offer.quantity;
+                    totals.totalCost += selectedOffer.cost * offer.quantity;
+                    return totals;
+                  },
+                  { totalRevenue: 0, totalCost: 0 }
+                );
+
+                const totalProfit = totalRevenue - totalCost;
+
+                const order = await Order.create({
+                  offers: shoppingCart.map((offer) => ({
+                    offer: offer.offer,
+                    quantity: offer.quantity,
+                  })),
+                  quantity: shoppingCart.reduce(
+                    (total, offer) => total + offer.quantity,
+                    0
+                  ),
+                  status: "pending",
+                  total_revenue: totalRevenue,
+                  total_profit: totalProfit,
+                });
+
+                console.log(
+                  "Order created successfully with the following offers:"
+                );
+                shoppingCart.forEach((offer) => {
+                  console.log(`${offer.quantity} units of ${offer.name}`);
+                });
+              } else {
+                console.log(
+                  "No offers added to the order. Order creation failed."
+                );
+              }
+            }
+
             exitOrMenu();
             break;
 
@@ -758,7 +850,7 @@ try {
               );
 
               console.log(`Products: ${productsString.join(", ")}`);
-              console.log(`Details: ${order.details}`)
+              console.log(`Details: ${order.details}`);
               console.log(`Created At: ${order.createdAt.toLocaleString()}`);
               console.log(`Status: ${order.status}`);
               console.log("-------------------------");
@@ -1002,7 +1094,9 @@ try {
     function exitOrMenu() {
       let exitOrMenu = 3;
       while (exitOrMenu != 1 && exitOrMenu != 2) {
-        console.log("\nWhat do you want to do now?\n 1. Main menu \n 2. Exit \n");
+        console.log(
+          "\nWhat do you want to do now?\n 1. Main menu \n 2. Exit \n"
+        );
         exitOrMenu = p("Please make a choice by entering a number: ");
         if (exitOrMenu == 1) {
           Menu();
@@ -1019,4 +1113,4 @@ try {
   } //End of if-function
 } catch (error) {
   console.log("Error connecting to MongoDB:", error);
-};
+}
