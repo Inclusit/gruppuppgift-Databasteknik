@@ -606,7 +606,9 @@ try {
                 `\n --------- Offers containing products in stock --------- \n`
               );
               offersByStock.forEach((offer) => {
-                console.log(`Offer: ${offer.name} \n Price: ${offer.price}`);
+                console.log(
+                  `\nOffer: ${offer.name} \n Price: ${offer.price}\n`
+                );
               });
             } else {
               console.log(
@@ -618,12 +620,207 @@ try {
             break;
 
           case "8":
-            //massa kod
+            console.log("\n --------- Create order --------- \n");
+
+            const makeOrder = p("Do you want to make an order? y/n: ");
+            console.log("");
+
+            if (makeOrder === "y") {
+              let shoppingCart = [];
+              let showProducts = await Products.find(
+                {},
+                "name price cost stock"
+              );
+              while (true) {
+                console.log("--------- Product list ---------");
+
+                try {
+                  showProducts.forEach((product, i) => {
+                    console.log(
+                      `${i + 1}. ${product.name} - ${product.price} USD`
+                    );
+                  });
+
+                  console.log("");
+                  let productIndex = p(
+                    "Choose a product by entering its index (X to finish): "
+                  ).toLowerCase();
+
+                  if (productIndex === "x") {
+                    break;
+                  }
+
+                  if (
+                    productIndex >= 1 &&
+                    productIndex <= showProducts.length
+                  ) {
+                    const selectedProduct = showProducts[productIndex - 1];
+
+                    const quantity = parseInt(p("Enter the quantity: "));
+
+                    if (quantity > 0 && quantity <= selectedProduct.stock) {
+                      shoppingCart.push({
+                        product: selectedProduct._id,
+                        quantity: quantity,
+                        name: selectedProduct.name,
+                      });
+                      console.log(
+                        `Added ${quantity} units of ${selectedProduct.name} to the order.`
+                      );
+                    } else {
+                      console.log(
+                        "\nInvalid quantity or insufficient stock. Please try again.\n"
+                      );
+                    }
+                  } else {
+                    console.log("Invalid product index. Please try again.");
+                  }
+                } catch (error) {
+                  console.log("Error fetching products: ", error);
+                }
+              }
+
+              if (shoppingCart.length > 0) {
+                const { totalRevenue, totalCost } = shoppingCart.reduce(
+                  (totals, product) => {
+                    const selectedProduct = showProducts.find((p) =>
+                      p._id.equals(product.product)
+                    );
+                    totals.totalRevenue +=
+                      selectedProduct.price * product.quantity;
+                    totals.totalCost += selectedProduct.cost * product.quantity;
+                    return totals;
+                  },
+                  { totalRevenue: 0, totalCost: 0 }
+                );
+
+                const totalProfit = totalRevenue - totalCost;
+
+                const order = await Order.create({
+                  products: shoppingCart.map((product) => ({
+                    product: product.product,
+                    quantity: product.quantity,
+                  })),
+                  quantity: shoppingCart.reduce(
+                    (total, product) => total + product.quantity,
+                    0
+                  ),
+                  status: "pending", // default status
+                  total_revenue: totalRevenue,
+                  total_profit: totalProfit,
+                });
+
+                console.log(
+                  "Order created successfully with the following products:"
+                );
+                shoppingCart.forEach((product) => {
+                  console.log(`${product.quantity} units of ${product.name}`);
+                });
+              } else {
+                console.log(
+                  "No products added to the order. Order creation failed."
+                );
+              }
+            }
+
             exitOrMenu();
             break;
 
           case "9":
-            //massa kod
+            console.log("\n --------- Create order --------- \n");
+
+            const orderConfirmation = p("Do you want to make an order? y/n: ");
+            console.log("");
+
+            if (orderConfirmation === "y") {
+              let shoppingCart = [];
+              let showOffers = await Offer.find({}, "name price cost stock");
+              while (true) {
+                console.log("--------- Offer list ---------");
+
+                try {
+                  showOffers.forEach((offer, i) => {
+                    console.log(`${i + 1}. ${offer.name} - ${offer.price} USD`);
+                  });
+
+                  console.log("");
+                  const offerIndex = p(
+                    "Choose an offer by entering its index (X to finish): "
+                  ).toLowerCase();
+
+                  if (offerIndex === "x") {
+                    break;
+                  }
+
+                  if (offerIndex >= 1 && offerIndex <= showOffers.length) {
+                    const selectedOffer = showOffers[offerIndex - 1];
+
+                    const quantity = parseInt(p("Enter the quantity: "));
+
+                    if (quantity > 0 && quantity <= selectedOffer.stock) {
+                      shoppingCart.push({
+                        offer: selectedOffer._id,
+                        quantity: quantity,
+                        name: selectedOffer.name,
+                      });
+                      console.log(
+                        `Added ${quantity} units of ${selectedOffer.name} to the order.`
+                      );
+                    } else {
+                      console.log(
+                        "\nInvalid quantity or insufficient stock. Please try again.\n"
+                      );
+                    }
+                  } else {
+                    console.log("Invalid offer index. Please try again.");
+                  }
+                } catch (error) {
+                  console.log("Error fetching offers: ", error);
+                }
+              }
+
+              if (shoppingCart.length > 0) {
+                const { totalRevenue, totalCost } = shoppingCart.reduce(
+                  (totals, offer) => {
+                    const selectedOffer = showOffers.find((o) =>
+                      o._id.equals(offer.offer)
+                    );
+                    totals.totalRevenue += selectedOffer.price * offer.quantity;
+                    totals.totalCost += selectedOffer.cost * offer.quantity;
+                    return totals;
+                  },
+                  { totalRevenue: 0, totalCost: 0 }
+                );
+
+                const totalProfit = totalRevenue - totalCost;
+
+                const order = await Order.create({
+                  offers: shoppingCart.map((offer) => ({
+                    offer: offer.offer,
+                    quantity: offer.quantity,
+                  })),
+                  quantity: shoppingCart.reduce(
+                    (total, offer) => total + offer.quantity,
+                    0
+                  ),
+                  status: "pending",
+                  total_revenue: totalRevenue,
+                  total_profit: totalProfit,
+                });
+
+                console.log(
+                  "Order created successfully with the following offers:"
+                );
+                shoppingCart.forEach((offer) => {
+                  console.log(`${offer.quantity} units of ${offer.name}`);
+                });
+              } else {
+                console.log(
+                  "No offers added to the order. Order creation failed."
+                );
+              }
+            }
+
             exitOrMenu();
             break;
 
@@ -730,38 +927,3 @@ try {
 } catch (error) {
   console.log("Error connecting to MongoDB:", error);
 }
-
-// async function addNewCategory(p) {
-//   console.log("\n --------- Add new category --------- \n");
-
-//   let addCategory = p("Do you wish to add a new category? y/n: ");
-
-//   if (addCategory == "y") {
-//     try {
-//       let categoryName = p("Input new category name: ");
-//       let categoryDesc = p("Input category description: ");
-
-//       let checkExistingCategory = await Category.countDocuments({
-//         name: categoryName,
-//       });
-
-//       if (checkExistingCategory > 0) {
-//         console.log(
-//           `Category ${categoryName} already exists in database, redirecting you to main menu`
-//         );
-//         return;
-//       } else {
-//         await Category.create({
-//           name: categoryName,
-//           description: categoryDesc,
-//         });
-
-//         console.log(`\n ${categoryName} category has been added`);
-//       }
-//     } catch (error) {
-//       console.log("Unable to add new category ", error);
-//     }
-//   } else {
-//     console.log("Redirecting you to main menu");
-//   }
-// }
