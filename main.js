@@ -73,6 +73,9 @@ try {
       total_revenue: Number,
       total_profit: Number,
     });
+    orderSchema.add({
+      createdAt: { type: Date, default: Date.now },
+    });
 
     const Category = mongoose.model("Categories", categorySchema);
     const Supplier = mongoose.model("Suppliers", supplierSchema);
@@ -117,8 +120,6 @@ try {
         //Create order for products -> lista alla produktnamn och pris, när någon väljer topp från män eller kvinnor så sker en offer
 
         switch (input) {
-          case "1":
-          // addNewCategory(p);
           case "1":
             console.log("\n --------- Add  new category --------- \n");
             let addCat = p("Do you wish to add a new category? y/n: ");
@@ -716,7 +717,29 @@ try {
             break;
 
           case "13":
-            //massa kod
+          const orders = await Order.find(
+            {},
+            "createdAt status total_revenue products"
+          );
+
+          for (const order of orders) {
+            console.log(`Order ${orders.indexOf(order) + 1}:`);
+            console.log(`  Created at: ${order.createdAt.toLocaleString()}`);
+            console.log("  Products:");
+
+            for (const productData of order.products) {
+              const productId = productData.product;
+              const product = await Products.findById(productId);
+              console.log(
+                `    - ${product.name} (Quantity: ${productData.quantity})`
+              );
+            }
+
+            console.log(`  Status: ${order.status}`);
+            console.log(`  Total Revenue: ${order.total_revenue} USD`);
+            console.log("-------------------------");
+          }
+
             exitOrMenu();
             break;
 
@@ -747,6 +770,7 @@ try {
             console.log(
               `Total profit generated: ${showProfits[0].totalProfit} USD`
             );
+            console.log("");
             let showDetailedProfits = p(
               "Would you want to see a detailed breakdown? y/n: "
             );
@@ -792,7 +816,7 @@ try {
                             { $multiply: ["$totalCost", 0.7] }, // 70% of the cost as profit
                           ],
                         },
-                        2, // Specify the number of decimal places
+                        2,
                       ],
                     },
                   },
@@ -829,7 +853,7 @@ try {
     function exitOrMenu() {
       let exitOrMenu = 3;
       while (exitOrMenu != 1 && exitOrMenu != 2) {
-        console.log("What do you want to do now?\n 1. Main menu \n 2. Exit \n");
+        console.log("\nWhat do you want to do now?\n 1. Main menu \n 2. Exit \n");
         exitOrMenu = p("Please make a choice by entering a number: ");
         if (exitOrMenu == 1) {
           Menu();

@@ -67,6 +67,9 @@ export async function database() {
         total_revenue: Number,
         total_profit: Number,
       });
+      orderSchema.add({
+        createdAt: { type: Date, default: Date.now },
+      });
 
       const Category = mongoose.model("Categories", categorySchema);
 
@@ -77,6 +80,7 @@ export async function database() {
       const Offer = mongoose.model("Offers", offerSchema);
 
       const Order = mongoose.model("Orders", orderSchema);
+      
 
       const { db } = mongoose.connection;
 
