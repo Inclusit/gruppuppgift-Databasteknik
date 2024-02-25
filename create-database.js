@@ -37,7 +37,9 @@ export async function database() {
       });
 
       const offerSchema = mongoose.Schema({
+        name: { type: String },
         products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
+        categories: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category" }],
         price: { type: Number },
         active: { type: Boolean },
         inStock: {
@@ -53,23 +55,19 @@ export async function database() {
       });
 
       const orderSchema = mongoose.Schema({
-        offer: { type: mongoose.Schema.Types.ObjectId, ref: "Offer" },
         products: [
           {
             product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
             quantity: { type: Number, required: true },
           },
         ],
-        total: Number,
-        quantity: Number,
-        details: String,
-        status: String, //"pending"/"shipped"
-        type: String,
-        total_revenue: Number,
-        total_profit: Number,
-      });
-      orderSchema.add({
-        createdAt: { type: Date, default: Date.now },
+        offer: { type: mongoose.Schema.Types.ObjectId, ref: "Offer" },
+        quantity: { type: Number, required: true },
+        status: {
+          type: String,
+          enum: ["pending", "shipped"],
+          default: "pending",
+        },
       });
 
       const Category = mongoose.model("Categories", categorySchema);
@@ -81,7 +79,6 @@ export async function database() {
       const Offer = mongoose.model("Offers", offerSchema);
 
       const Order = mongoose.model("Orders", orderSchema);
-      
 
       const { db } = mongoose.connection;
 
@@ -146,38 +143,7 @@ export async function database() {
           console.log("An error occurred while adding categories", error);
         }
       }
-      if (Offer) {
-        try {
-          let offersData = [
-            {
-              products: [],
-              price: 100,
-              active: true,
-              inStock: [
-                {
-                  product: ObjectId("PRODUCT_ID_1"),
-                  status: (await Products.findById("PRODUCT_ID_1")).stock > 0,
-                },
-                {
-                  product: ObjectId("PRODUCT_ID_2"),
-                  status: (await Products.findById("PRODUCT_ID_2")).stock > 0,
-                },
-              ],
-              bothInStock: false,
-            },
-          ];
-
-          const countOffers = await Offer.countDocuments();
-          console.log("Number of existing offers:", countOffers);
-
-          if (countOffers === 0) {
-            await Offer.insertMany(offersData);
-            console.log("Example offers have been inserted into the database.");
-          }
-        } catch (error) {
-          console.log("An error occurred while adding example offers:", error);
-        }
-      }
+     
       if (Products) {
         try {
           let productsData = [
@@ -313,36 +279,105 @@ export async function database() {
         }
       }
 
-      if (Offer) {
-        try {
-          let offerData = [
-            {
-              products: [
-                "Mens Casual Slim Fit",
-                "Opna Women's Short Sleeve Moisture",
-              ],
-              price: 65,
-              active: True,
-            },
-            {
-              products: [
-                "White Gold Plated Princess",
-                "Solid Gold Petite Micropave",
-              ],
-              price: 50,
-              active: True,
-            },
-          ];
+       if (Offer) {
+         try {
+           const offer1Product1 = await Products.findOne({
+             name: "Mens Casual Premium Slim Fit T-Shirts",
+           });
 
-          const countOffers = await Offer.countDocuments();
+           const offer1Product2 = await Products.findOne({
+             name: "Mens Cotton Jacket",
+           });
 
-          if (countOffers === 0) {
-            await Offer.insertMany(offerData);
-          }
-        } catch (error) {
-          console.log("An error occurred while applying offers", error);
-        }
-      }
+           const offer2Product1 = await Products.findOne({
+             name: "White Gold Plated Princess",
+           });
+
+           const offer2Product2 = await Products.findOne({
+             name: "Pierced Owl Rose Gold Plated Stainless Steel Double",
+           });
+
+           const offer3Product1 = await Products.findOne({
+             name: "MBJ Women's Solid Short Sleeve Boat Neck V",
+           });
+
+           const offer3Product2 = await Products.findOne({
+             name: "Opna Women's Short Sleeve Moisture",
+           });
+
+           let offersData = [
+             {
+               name: "Men's Casual Premium Offer",
+               products: [offer1Product1, offer1Product2],
+               categories: [offer1Product1.category, offer1Product2.category],
+               price: (offer1Product1.price + offer1Product2.price) * 0.8,
+               active: true,
+               inStock: [
+                 {
+                   product: offer1Product1._id,
+                   status: offer1Product1.stock > 0 ? true : false,
+                 },
+                 {
+                   product: offer1Product2._id,
+                   status: offer1Product2.stock > 0 ? true : false,
+                 },
+               ],
+               bothInStock:
+                 offer1Product1.stock > 0 && offer1Product2.stock > 0,
+             },
+             {
+               name: "Jewelery Offer",
+               products: [offer2Product1, offer2Product2],
+               categories: [offer2Product1.category, offer2Product2.category],
+               price: (offer2Product1.price + offer2Product2.price) * 0.8,
+               active: true,
+               inStock: [
+                 {
+                   product: offer2Product1._id,
+                   status: offer2Product1.stock > 0 ? true : false,
+                 },
+                 {
+                   product: offer2Product2._id,
+                   status: offer2Product2.stock > 0 ? true : false,
+                 },
+               ],
+               bothInStock:
+                 offer2Product1.stock > 0 && offer2Product2.stock > 0,
+             },
+             {
+               name: "Women's Casual Offer",
+               products: [offer3Product1, offer3Product2],
+               categories: [offer3Product1.category, offer3Product2.category],
+               price: (offer3Product1.price + offer3Product2.price) * 0.8,
+               active: true,
+               inStock: [
+                 {
+                   product: offer3Product1._id,
+                   status: offer3Product1.stock > 0 ? true : false,
+                 },
+                 {
+                   product: offer3Product2._id,
+                   status: offer3Product2.stock > 0 ? true : false,
+                 },
+               ],
+               bothInStock:
+                 offer3Product1.stock > 0 && offer3Product2.stock > 0,
+             },
+           ];
+
+           const countOffers = await Offer.countDocuments();
+           console.log("Number of existing offers:", countOffers);
+
+           if (countOffers === 0) {
+             await Offer.insertMany(offersData);
+             console.log("The following offers have been added:", offersData);
+           } else {
+             console.log("Offers already exist in the database");
+           }
+         } catch (error) {
+           console.log("An error occurred while adding the offers:", error);
+         }
+       }
     }
   } catch (error) {
     console.log("Error connecting to MongoDB:", error);

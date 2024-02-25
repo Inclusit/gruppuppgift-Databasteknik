@@ -41,13 +41,13 @@ try {
 
     const offerSchema = mongoose.Schema({
       name: { type: String },
-      products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
+      products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Products" }],
       price: { type: Number },
       active: { type: Boolean },
       inStock: {
         type: [
           {
-            product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+            product: { type: mongoose.Schema.Types.ObjectId, ref: "Products" },
             status: { type: Boolean, default: false },
           },
         ],
@@ -440,7 +440,7 @@ try {
                 console.log("Unable to add new product ", error);
               }
             }
-            exitOrMenu();
+            /* exitOrMenu(); */
             break;
 
           case "3":
@@ -513,8 +513,8 @@ try {
               break;
             } else {
               console.log("\nInvalid input, redirecting you to main menu");
-            }
-            exitOrMenu();
+            }/* 
+            exitOrMenu(); */
             break;
 
           case "5":
@@ -545,8 +545,8 @@ try {
               console.log(
                 `\nThere are currently no offers between ${minPrice} and ${maxPrice}, redirecting you to main menu`
               );
-            }
-            exitOrMenu();
+            }/* 
+            exitOrMenu(); */
             break;
 
           case "6":
@@ -592,8 +592,8 @@ try {
             } else {
               console.log("\nInvalid input, redirecting you to main menu");
             }
-
-            exitOrMenu();
+/* 
+            exitOrMenu(); */
             break;
 
           case "7":
@@ -617,115 +617,126 @@ try {
               );
             }
 
-            exitOrMenu();
+            /* exitOrMenu(); */
             break;
 
           case "8":
-            console.log("\n --------- Create order --------- \n");
+            try {
+              console.log("\n --------- Create order --------- \n");
 
-            const makeOrder = p("Do you want to make an order? y/n: ");
-            console.log("");
+              const makeOrder = p("Do you want to make an order? y/n: ");
+              console.log("");
 
-            if (makeOrder === "y") {
-              let shoppingCart = [];
-              let showProducts = await Products.find(
-                {},
-                "name price cost stock"
-              );
-              while (true) {
-                console.log("--------- Product list ---------");
+              if (makeOrder.toLowerCase() === "y") {
+                let shoppingCart = [];
+                let showProducts = await Products.find(
+                  {},
+                  "name price cost stock"
+                );
 
-                try {
-                  showProducts.forEach((product, i) => {
-                    console.log(
-                      `${i + 1}. ${product.name} - ${product.price} USD`
-                    );
+                while (true) {
+                  console.log("--------- Product list ---------");
+
+                  try {
+                    showProducts.forEach((product, i) => {
+                      console.log(
+                        `${i + 1}. ${product.name} - ${product.price} USD`
+                      );
+                    });
+
+                    console.log("");
+                    let productIndex = p(
+                      "Choose a product by entering its index (X to finish):  "
+                    ).toLowerCase();
+
+                    if (productIndex === "x") {
+                      break;
+                    }
+
+                    if (
+                      productIndex >= 1 &&
+                      productIndex <= showProducts.length
+                    ) {
+                      const selectedProduct = showProducts[productIndex - 1];
+
+                      const quantity = parseInt(p("Enter the quantity: "));
+
+                      if (quantity > 0 && quantity <= selectedProduct.stock) {
+                        shoppingCart.push({
+                          product: selectedProduct._id,
+                          quantity: quantity,
+                          name: selectedProduct.name,
+                        });
+                        console.log(
+                          `Added ${quantity} units of ${selectedProduct.name} to the order.`
+                        );
+                      } else {
+                        console.log(
+                          "\nInvalid quantity or insufficient stock. Please try again.\n"
+                        );
+                      }
+                    } else {
+                      console.log("Invalid product index. Please try again.");
+                    }
+                  } catch (error) {
+                    console.log("Error fetching products: ", error);
+                  }
+                }
+
+                if (shoppingCart.length > 0) {
+                  const { totalRevenue, totalCost } = shoppingCart.reduce(
+                    (totals, product) => {
+                      const selectedProduct = showProducts.find((p) =>
+                        p._id.equals(product.product)
+                      );
+                      totals.totalRevenue +=
+                        selectedProduct.price * product.quantity;
+                      totals.totalCost +=
+                        selectedProduct.cost * product.quantity;
+                      return totals;
+                    },
+                    { totalRevenue: 0, totalCost: 0 }
+                  );
+
+                  const totalProfit = totalRevenue - totalCost;
+
+                  const order = await Order.create({
+                    products: shoppingCart.map((product) => ({
+                      product: product.product,
+                      quantity: product.quantity,
+                    })),
+                    quantity: shoppingCart.reduce(
+                      (total, product) => total + product.quantity,
+                      0
+                    ),
+                    status: "pending", // standardstatus
+                    total_revenue: totalRevenue,
+                    total_profit: totalProfit,
                   });
 
-                  console.log("");
-                  let productIndex = p(
-                    "Choose a product by entering its index (X to finish): "
-                  ).toLowerCase();
-
-                  if (productIndex === "x") {
-                    break;
-                  }
-
-                  if (
-                    productIndex >= 1 &&
-                    productIndex <= showProducts.length
-                  ) {
-                    const selectedProduct = showProducts[productIndex - 1];
-
-                    const quantity = parseInt(p("Enter the quantity: "));
-
-                    if (quantity > 0 && quantity <= selectedProduct.stock) {
-                      shoppingCart.push({
-                        product: selectedProduct._id,
-                        quantity: quantity,
-                        name: selectedProduct.name,
-                      });
-                      console.log(
-                        `Added ${quantity} units of ${selectedProduct.name} to the order.`
-                      );
-                    } else {
-                      console.log(
-                        "\nInvalid quantity or insufficient stock. Please try again.\n"
-                      );
-                    }
-                  } else {
-                    console.log("Invalid product index. Please try again.");
-                  }
-                } catch (error) {
-                  console.log("Error fetching products: ", error);
+                  console.log(
+                    "Order created successfully with the following products:"
+                  );
+                  shoppingCart.forEach((product) => {
+                    console.log(`${product.quantity} units of ${product.name}`);
+                  });
+                } else {
+                  console.log(
+                    "No products added to the order. Order creation failed."
+                  );
                 }
               }
 
-              if (shoppingCart.length > 0) {
-                const { totalRevenue, totalCost } = shoppingCart.reduce(
-                  (totals, product) => {
-                    const selectedProduct = showProducts.find((p) =>
-                      p._id.equals(product.product)
-                    );
-                    totals.totalRevenue +=
-                      selectedProduct.price * product.quantity;
-                    totals.totalCost += selectedProduct.cost * product.quantity;
-                    return totals;
-                  },
-                  { totalRevenue: 0, totalCost: 0 }
-                );
-
-                const totalProfit = totalRevenue - totalCost;
-
-                const order = await Order.create({
-                  products: shoppingCart.map((product) => ({
-                    product: product.product,
-                    quantity: product.quantity,
-                  })),
-                  quantity: shoppingCart.reduce(
-                    (total, product) => total + product.quantity,
-                    0
-                  ),
-                  status: "pending", // default status
-                  total_revenue: totalRevenue,
-                  total_profit: totalProfit,
-                });
-
-                console.log(
-                  "Order created successfully with the following products:"
-                );
-                shoppingCart.forEach((product) => {
-                  console.log(`${product.quantity} units of ${product.name}`);
-                });
-              } else {
-                console.log(
-                  "No products added to the order. Order creation failed."
-                );
-              }
+              /* exitOrMenu(); */
+              break;
+            } catch (error) {
+              console.error(
+                "Ett fel uppstod vid försöket att skapa en order:",
+                error
+              );
+              // Hantera ytterligare fel här om det behövs
+              break;
             }
-
-            exitOrMenu();
-            break;
 
           case "9":
             console.log("\n --------- Create order --------- \n");
@@ -822,7 +833,7 @@ try {
               }
             }
 
-            exitOrMenu();
+           /*  exitOrMenu(); */
             break;
 
           case "10":
@@ -940,7 +951,7 @@ try {
             } else {
               console.log("Redirecting you to main menu");
             }
-            exitOrMenu();
+            /* exitOrMenu(); */
             break;
 
           case "12":
@@ -954,7 +965,7 @@ try {
             Contact: ${supplier.contact.name}\n
             Email: ${supplier.contact.email}\n`);
             });
-            exitOrMenu();
+            /* exitOrMenu(); */
             break;
 
           case "13":
@@ -981,7 +992,7 @@ try {
               console.log("-------------------------");
             }
 
-            exitOrMenu();
+            /* exitOrMenu(); */
             break;
 
           case "14":
@@ -1075,7 +1086,7 @@ try {
               break;
             }
 
-            exitOrMenu();
+            /* exitOrMenu(); */
             break;
 
           case "15":
@@ -1085,14 +1096,15 @@ try {
           default:
             console.log(
               "\n Invalid input \n Please choose an option between 1-15 \n"
-            );
-            exitOrMenu();
+            );/* 
+            exitOrMenu(); */
             break;
         } //End of switch/case loop
       } //End of runApp loop
     } //End of async menu function
     function exitOrMenu() {
       let exitOrMenu = 3;
+
       while (exitOrMenu != 1 && exitOrMenu != 2) {
         console.log(
           "\nWhat do you want to do now?\n 1. Main menu \n 2. Exit \n"
