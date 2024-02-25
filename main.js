@@ -41,13 +41,13 @@ try {
 
     const offerSchema = mongoose.Schema({
       name: { type: String },
-      products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Products" }],
+      products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
       price: { type: Number },
       active: { type: Boolean },
       inStock: {
         type: [
           {
-            product: { type: mongoose.Schema.Types.ObjectId, ref: "Products" },
+            product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
             status: { type: Boolean, default: false },
           },
         ],
@@ -521,7 +521,7 @@ try {
               break;
             } else {
               console.log("\nInvalid input, redirecting you to main menu");
-            } /* 
+            }/* 
             exitOrMenu(); */
             break;
 
@@ -553,7 +553,7 @@ try {
               console.log(
                 `\nThere are currently no offers between ${minPrice} and ${maxPrice}, redirecting you to main menu`
               );
-            } /* 
+            }/* 
             exitOrMenu(); */
             break;
 
@@ -600,7 +600,7 @@ try {
             } else {
               console.log("\nInvalid input, redirecting you to main menu");
             }
-            /* 
+/* 
             exitOrMenu(); */
             break;
 
@@ -652,14 +652,10 @@ try {
                       );
                     });
 
-                    // console.log("");
-                    // let productIndex = p(
-                    //   "Choose a product by entering its index (X to finish): "
-                    // );
-
+                    console.log("");
                     let productIndex = p(
-                      "Choose a product by entering its index (X to finish):"
-                    );
+                      "Choose a product by entering its index (X to finish):  "
+                    ).toLowerCase();
 
                     if (productIndex === "x") {
                       break;
@@ -879,17 +875,20 @@ try {
               console.log("total cost", totalCost);
               console.log("total profit", totalProfit);
 
-              console.log(
-                "Order created successfully with the following offers:"
-              );
-              shoppingCart.forEach((offer) => {
-                console.log(`${offer.quantity} units of ${offer.name}`);
-              });
-            } else {
-              console.log(
-                "No offers added to the order. Order creation failed."
-              );
+                console.log(
+                  "Order created successfully with the following offers:"
+                );
+                shoppingCart.forEach((offer) => {
+                  console.log(`${offer.quantity} units of ${offer.name}`);
+                });
+              } else {
+                console.log(
+                  "No offers added to the order. Order creation failed."
+                );
+              }
             }
+
+           /*  exitOrMenu(); */
             break;
 
           case "10":
@@ -1159,30 +1158,30 @@ try {
           default:
             console.log(
               "\n Invalid input \n Please choose an option between 1-15 \n"
-            ); /* 
+            );/* 
             exitOrMenu(); */
             break;
         } //End of switch/case loop
       } //End of runApp loop
     } //End of async menu function
-    // function exitOrMenu() {
-    //   let exitOrMenu = 3;
+    function exitOrMenu() {
+      let exitOrMenu = 3;
 
-    //   while (exitOrMenu != 1 && exitOrMenu != 2) {
-    //     console.log(
-    //       "\nWhat do you want to do now?\n 1. Main menu \n 2. Exit \n"
-    //     );
-    //     exitOrMenu = p("Please make a choice by entering a number: ");
-    //     if (exitOrMenu == 1) {
-    //       Menu();
-    //     } else if (exitOrMenu == 2) {
-    //       console.log("\nGoodbye!\n");
-    //       process.exit();
-    //     } else {
-    //       console.log("Invalid input, please try again");
-    //     }
-    //   }
-    // }
+      while (exitOrMenu != 1 && exitOrMenu != 2) {
+        console.log(
+          "\nWhat do you want to do now?\n 1. Main menu \n 2. Exit \n"
+        );
+        exitOrMenu = p("Please make a choice by entering a number: ");
+        if (exitOrMenu == 1) {
+          Menu();
+        } else if (exitOrMenu == 2) {
+          console.log("\nGoodbye!\n");
+          process.exit();
+        } else {
+          console.log("Invalid input, please try again");
+        }
+      }
+    }
 
     Menu();
   } //End of if-function
