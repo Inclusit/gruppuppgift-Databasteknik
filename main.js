@@ -959,14 +959,14 @@ try {
             // Uppdatera lagernivåerna för produkterna i ordern
             for (const productData of orderToShip.products) {
               const productId = productData.product;
-              const product = await Products.findById(ObjectId);
+              const product = await Products.findById(productId);
 
               if (product) {
-                product.stock -= productData.quantity;
-                await product.save();
+                  product.stock -= productData.quantity;
+                  await product.save();
               }
-            }
 
+            }
             console.log("\nOrder has been shipped successfully!\n");
             console.log("-------------------------");
             /* exitOrMenu(); */
@@ -1051,6 +1051,7 @@ try {
                 );
               }
 
+              console.log(`  Details: ${order.details}`);
               console.log(`  Status: ${order.status}`);
               console.log(`  Total Revenue: ${order.total_revenue} USD`);
               console.log("-------------------------");
