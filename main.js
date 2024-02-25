@@ -587,10 +587,8 @@ try {
                       );
                     });
 
-                    // console.log("");
-                    // let productIndex = p(
-                    //   "Choose a product by entering its index (X to finish): "
-                    // );
+                    console.log("");
+                    
 
                     let productIndex = p(
                       "Choose a product by entering its index (X to finish):"
@@ -646,6 +644,8 @@ try {
                   );
 
                   const totalProfit = totalRevenue - totalCost;
+                  
+                  const orderDetails = p("Additional order details: ")
 
                   const order = await Order.create({
                     products: shoppingCart.map((product) => ({
@@ -656,6 +656,7 @@ try {
                       (total, product) => total + product.quantity,
                       0
                     ),
+                    details: orderDetails,
                     status: "pending", // standardstatus
                     total_revenue: totalRevenue,
                     total_profit: totalProfit,
@@ -913,11 +914,11 @@ try {
               const product = await Products.findById(productId);
 
               if (product) {
-                product.stock -= productData.quantity;
-                await product.save();
+                  product.stock -= productData.quantity;
+                  await product.save();
               }
-            }
 
+            }
             console.log("\nOrder has been shipped successfully!\n");
             console.log("-------------------------");
             /* exitOrMenu(); */
@@ -1002,6 +1003,7 @@ try {
                 );
               }
 
+              console.log(`  Details: ${order.details}`);
               console.log(`  Status: ${order.status}`);
               console.log(`  Total Revenue: ${order.total_revenue} USD`);
               console.log("-------------------------");
