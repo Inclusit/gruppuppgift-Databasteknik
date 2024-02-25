@@ -588,7 +588,6 @@ try {
                     });
 
                     console.log("");
-                    
 
                     let productIndex = p(
                       "Choose a product by entering its index (X to finish):"
@@ -644,8 +643,8 @@ try {
                   );
 
                   const totalProfit = totalRevenue - totalCost;
-                  
-                  const orderDetails = p("Additional order details: ")
+
+                  const orderDetails = p("Additional order details: ");
 
                   const order = await Order.create({
                     products: shoppingCart.map((product) => ({
@@ -807,6 +806,15 @@ try {
                 total_revenue: totalRevenue,
                 total_profit: totalProfit,
               });
+
+              for (const offer of shoppingCart) {
+                for (const productData of offer.products) {
+                  const productId = productData._id;
+                  const product = await Products.findById(productId);
+                  product.stock -= offer.quantity;
+                  await product.save();
+                }
+              }
               console.log(
                 "Order created successfully with the following offers:",
                 order //shoppingCart
@@ -914,10 +922,9 @@ try {
               const product = await Products.findById(productId);
 
               if (product) {
-                  product.stock -= productData.quantity;
-                  await product.save();
+                product.stock -= productData.quantity;
+                await product.save();
               }
-
             }
             console.log("\nOrder has been shipped successfully!\n");
             console.log("-------------------------");
@@ -1040,11 +1047,23 @@ try {
               `Total profit generated: ${showProfits[0].totalProfit} USD`
             );
             console.log("");
+
             let showDetailedProfits = p(
-              "Would you want to see a detailed breakdown? y/n: "
+              "Would you like to see a detailed profit breakdown for a specific product? y/n:"
             );
 
             if (showDetailedProfits === "y") {
+              // Fetch all products from the database
+              const products = await Products.find({}, "name");
+
+              console.log("Available Products:");
+              products.forEach((product, index) => {
+                console.log(`${index + 1}. ${product.name}`);
+              });
+
+              const productChoice = p("Enter the number of the product: ");
+              const selectedProduct = products[productChoice - 1];
+
               const detailedProfits = await Order.aggregate([
                 {
                   $unwind: "$products",
@@ -1059,6 +1078,11 @@ try {
                 },
                 {
                   $unwind: "$productInfo",
+                },
+                {
+                  $match: {
+                    "productInfo._id": selectedProduct._id,
+                  },
                 },
                 {
                   $group: {
@@ -1098,12 +1122,51 @@ try {
                   `${productProfit._id}: Profit - ${productProfit.totalProfit} USD`
                 );
               });
-            } else {
-              console.log("Redirecting you to main menu");
-              break;
-            }
+            } else if (showDetailedProfits === "n") {
+              let showDetailedProfitsfromOffer = p(
+                "Would you like to see how much profit offers containing a specific product have generated? y/n: "
+              );
+              if (showDetailedProfitsfromOffer === "y") {
+                // Fetch all products from the database
+                const products = await Products.find({}, "name");
 
-            /* exitOrMenu(); */
+                console.log("Available Products:");
+                products.forEach((product, index) => {
+                  console.log(`${index + 1}. ${product.name}`);
+                });
+
+                const productChoice = p("Enter the number of the product: ");
+                const selectedProduct = products[productChoice - 1];
+
+                const detailedProfits = await Offer.aggregate([
+                  {
+                    $match: {
+                      products: selectedProduct._id,
+                    },
+                  },
+                  {
+                    $group: {
+                      _id: null,
+                      totalProfit: {
+                        $sum: "$price",
+                      },
+                    },
+                  },
+                ]);
+
+                if (detailedProfits.length > 0) {
+                  console.log(
+                    `\nTotal profit from offers containing product ${selectedProduct.name}: ${detailedProfits[0].totalProfit} USD`
+                  );
+                } else {
+                  console.log(
+                    `No offers found containing product ${selectedProduct.name}`
+                  );
+                }
+              }
+            } else {
+              console.log("Invalid choice.");
+            }
             break;
 
           case "15":
