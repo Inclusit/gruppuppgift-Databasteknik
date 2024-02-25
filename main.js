@@ -160,6 +160,7 @@ try {
 
             if (addProduct == "y") {
               try {
+                // Input product details
                 let productName = "";
                 while (!productName) {
                   productName = p("Input product name: ");
@@ -210,6 +211,7 @@ try {
                   }
                 }
 
+                // Add new category or choose existing one
                 const categoryList = await Category.find();
                 console.log("\n --------- Available Categories --------- \n");
                 categoryList.forEach((category, i) => {
@@ -217,238 +219,141 @@ try {
                 });
                 console.log(`${categoryList.length + 1}. Add new category`);
 
-                let chosenCategory = "x";
-                while (
-                  isNaN(chosenCategory) ||
-                  chosenCategory < 1 ||
-                  chosenCategory > categoryList.length + 1
-                ) {
+                let chosenCategory = "";
+                while (!chosenCategory) {
                   chosenCategory = p("Choose category: ");
-                  if (isNaN(chosenCategory)) {
-                    console.log("Invalid input, please try again");
-                  }
-                }
+                  if (!isNaN(chosenCategory)) {
+                    if (
+                      chosenCategory >= 1 &&
+                      chosenCategory <= categoryList.length
+                    ) {
+                      chosenCategory = categoryList[chosenCategory - 1];
+                    } else if (chosenCategory == categoryList.length + 1) {
+                      // Add new category
+                      let addCat = p(
+                        "Do you wish to add a new category? y/n: "
+                      );
+                      if (addCat == "y") {
+                        try {
+                          let catName = p("Input new category name: ");
+                          let catDesc = p("Input category description: ");
+                          let checkExistingCat = await Category.countDocuments({
+                            name: catName,
+                          });
 
-                if (
-                  chosenCategory >= 1 &&
-                  chosenCategory <= categoryList.length
-                ) {
-                  chosenCategory = categoryList[chosenCategory - 1];
-                } else if (chosenCategory == categoryList.length + 1) {
-                  let addCat = p("Do you wish to add a new category? y/n: ");
-
-                  if (addCat == "y") {
-                    try {
-                      let catName = p("Input new category name: ");
-                      let catDesc = p("Input category description: ");
-
-                      let checkExistingCat = await Category.countDocuments({
-                        name: catName,
-                      });
-
-                      if (checkExistingCat > 0) {
-                        console.log(
-                          ` Category ${catName} already exists in database, redirecting you to main menu`
-                        );
+                          if (checkExistingCat > 0) {
+                            console.log(
+                              `Category ${catName} already exists in the database.`
+                            );
+                            chosenCategory = "";
+                          } else {
+                            const newCategory = await Category.create({
+                              name: catName,
+                              description: catDesc,
+                            });
+                            console.log(`\n${catName} category has been added`);
+                            chosenCategory = newCategory;
+                          }
+                        } catch (error) {
+                          console.log("Unable to add new category: ", error);
+                          chosenCategory = "";
+                        }
+                      } else {
+                        console.log("Redirecting you to main menu");
                         return;
-                      } else {
-                        await Category.create({
-                          name: catName,
-                          description: catDesc,
-                        });
-
-                        console.log(` \n ${catName} category has been added`);
                       }
-                    } catch (error) {
-                      console.log("Unable to add new category ", error);
+                    } else {
+                      console.log(
+                        "Invalid input. Please choose a valid category or add a new one."
+                      );
+                      chosenCategory = "";
                     }
                   } else {
-                    console.log("Redirecting you to main menu");
+                    console.log(
+                      "Invalid input. Please choose a valid category or add a new one."
+                    );
+                    chosenCategory = "";
                   }
                 }
-                let supplierList = await Supplier.find();
+
+                // Add new supplier or choose existing one
+                const supplierList = await Supplier.find();
                 console.log("\n --------- Available Suppliers --------- \n");
                 supplierList.forEach((supplier, i) => {
                   console.log(`${i + 1}. ${supplier.name}`);
                 });
+                console.log(`${supplierList.length + 1}. Add new supplier`);
 
-                let chosenSupplier = parseInt(p("Choose supplier: "));
-
-                if (
-                  chosenSupplier >= 1 &&
-                  chosenSupplier <= supplierList.length
-                ) {
-                  chosenSupplier = supplierList[chosenSupplier - 1];
-
-                  let productCreated = await Products.create({
-                    name: productName,
-                    category: chosenCategory._id,
-                    type: productType,
-                    price: productPrice,
-                    cost: productCost,
-                    stock: productStock,
-                    supplier: chosenSupplier,
-                  });
-
-                  productCreated &&
-                    console.log(
-                      `\n ${productName} has been added to ${chosenCategory.name} category`
-                    );
-                  break;
-                } else {
-                  console.log("Invalid input, redirecting you to main menu");
-                }
-              } catch (error) {
-                console.log("Unable to add new product ", error);
-              }
-            }
-
-            if (addProduct == "y") {
-              try {
-                let productName = "";
-                while (!productName) {
-                  productName = p("Input product name: ");
-                  if (!productName) {
-                    console.log(
-                      "Product name cannot be empty. Please try again."
-                    );
-                  }
-                }
-
-                let productType = "";
-                while (!productType) {
-                  productType = p("Input product type: ");
-                  if (!productType) {
-                    console.log(
-                      "Product type cannot be empty. Please try again."
-                    );
-                  }
-                }
-
-                let productPrice = NaN;
-                while (isNaN(productPrice)) {
-                  productPrice = parseFloat(p("Input product price: "));
-                  if (isNaN(productPrice)) {
-                    console.log(
-                      "Invalid input for product price. Please enter a valid number."
-                    );
-                  }
-                }
-
-                let productCost = NaN;
-                while (isNaN(productCost)) {
-                  productCost = parseFloat(p("Input product cost: "));
-                  if (isNaN(productCost)) {
-                    console.log(
-                      "Invalid input for product cost. Please enter a valid number."
-                    );
-                  }
-                }
-
-                let productStock = NaN;
-                while (isNaN(productStock)) {
-                  productStock = parseInt(p("Input product stock: "));
-                  if (isNaN(productStock)) {
-                    console.log(
-                      "Invalid input for product stock. Please enter a valid number."
-                    );
-                  }
-                }
-
-                const categoryList = await Category.find();
-                console.log("\n --------- Available Categories --------- \n");
-                categoryList.forEach((category, i) => {
-                  console.log(`${i + 1}. ${category.name}`);
-                });
-                console.log(`${categoryList.length + 1}. Add new category`);
-
-                let chosenCategory = "x";
-                while (
-                  isNaN(chosenCategory) ||
-                  chosenCategory < 1 ||
-                  chosenCategory > categoryList.length + 1
-                ) {
-                  chosenCategory = p("Choose category: ");
-                  if (isNaN(chosenCategory)) {
-                    console.log("Invalid input, please try again");
-                  }
-                }
-
-                if (
-                  chosenCategory >= 1 &&
-                  chosenCategory <= categoryList.length
-                ) {
-                  chosenCategory = categoryList[chosenCategory - 1];
-                } else if (chosenCategory == categoryList.length + 1) {
-                  let addCat = p("Do you wish to add a new category? y/n: ");
-
-                  if (addCat == "y") {
-                    try {
-                      let catName = p("Input new category name: ");
-                      let catDesc = p("Input category description: ");
-
-                      let checkExistingCat = await Category.countDocuments({
-                        name: catName,
-                      });
-
-                      if (checkExistingCat > 0) {
-                        console.log(
-                          ` Category ${catName} already exists in database, redirecting you to main menu`
-                        );
-                        break;
+                let chosenSupplier = "";
+                while (!chosenSupplier) {
+                  console.log("");
+                  chosenSupplier = p("Choose supplier: ");
+                  if (!isNaN(chosenSupplier)) {
+                    if (
+                      chosenSupplier >= 1 &&
+                      chosenSupplier <= supplierList.length
+                    ) {
+                      chosenSupplier = supplierList[chosenSupplier - 1];
+                    } else if (chosenSupplier == supplierList.length + 1) {
+                      // Add new supplier
+                      let addSupp = p(
+                        "Do you wish to add a new supplier? y/n: "
+                      );
+                      if (addSupp == "y") {
+                        try {
+                          let suppName = p("Input new supplier name: ");
+                          let contactName = p("Input contact person name: ");
+                          let contactMail = p("Input contact email: ");
+                          const newSupplier = await Supplier.create({
+                            name: suppName,
+                            contact: { name: contactName, email: contactMail },
+                          });
+                          console.log(
+                            `\n${suppName} has been added as a new supplier`
+                          );
+                          chosenSupplier = newSupplier;
+                        } catch (error) {
+                          console.log("Unable to add new supplier: ", error);
+                          chosenSupplier = "";
+                        }
                       } else {
-                        await Category.create({
-                          name: catName,
-                          description: catDesc,
-                        });
-
-                        console.log(` \n ${catName} category has been added`);
+                        console.log("Redirecting you to main menu");
+                        return;
                       }
-                    } catch (error) {
-                      console.log("Unable to add new category ", error);
+                    } else {
+                      console.log(
+                        "Invalid input. Please choose a valid supplier or add a new one."
+                      );
+                      chosenSupplier = "";
                     }
                   } else {
-                    console.log("Redirecting you to main menu");
+                    console.log(
+                      "Invalid input. Please choose a valid supplier or add a new one."
+                    );
+                    chosenSupplier = "";
                   }
                 }
-                let supplierList = await Supplier.find();
-                console.log("\n --------- Available Suppliers --------- \n");
-                supplierList.forEach((supplier, i) => {
-                  console.log(`${i + 1}. ${supplier.name}`);
+
+                // Create the product
+                const productCreated = await Products.create({
+                  name: productName,
+                  category: chosenCategory._id,
+                  type: productType,
+                  price: productPrice,
+                  cost: productCost,
+                  stock: productStock,
+                  supplier: chosenSupplier._id,
                 });
 
-                let chosenSupplier = parseInt(p("Choose supplier: "));
-
-                if (
-                  chosenSupplier >= 1 &&
-                  chosenSupplier <= supplierList.length
-                ) {
-                  chosenSupplier = supplierList[chosenSupplier - 1];
-
-                  let productCreated = await Products.create({
-                    name: productName,
-                    category: chosenCategory._id,
-                    type: productType,
-                    price: productPrice,
-                    cost: productCost,
-                    stock: productStock,
-                    supplier: chosenSupplier,
-                  });
-
-                  productCreated &&
-                    console.log(
-                      `\n ${productName} has been added to ${chosenCategory.name} category`
-                    );
-                  console.log("Product created: ", productCreated);
-                } else {
-                  console.log("Invalid input, redirecting you to main menu");
-                  break;
-                }
+                console.log(
+                  `\n${productName} has been added to ${chosenCategory.name} category`
+                );
               } catch (error) {
-                console.log("Unable to add new product ", error);
+                console.log("Unable to add new product: ", error);
               }
+            } else {
+              console.log("Redirecting you to main menu");
             }
-            /* exitOrMenu(); */
             break;
 
           case "3":
@@ -560,6 +465,7 @@ try {
           case "6":
             console.log("\n --------- Offers by category --------- \n");
             let categoriesList = await Category.find();
+
             console.log("\n --------- Available Categories --------- \n");
             categoriesList.forEach((category, i) => {
               console.log(`${i + 1}. ${category.name}`);
@@ -574,54 +480,83 @@ try {
               chosenCategoryInput <= categoriesList.length
             ) {
               let chosenCategory = categoriesList[chosenCategoryInput - 1];
-              let offersByCategory = await Offer.find({
-                categories: chosenCategory._id,
-              });
 
-              let offers = await Offer.find();
-              console.log("offers", offers);
-              console.log("offers by category", offersByCategory);
-              offers.name && console.log("offers name", offers.name);
-
-              if (offersByCategory.length > 0) {
-                console.log(
-                  `\n --------- Offers containing products from ${chosenCategory.name} --------- \n`
-                );
-                offersByCategory.forEach((offer) => {
-                  console.log(
-                    `\nName: ${offer.name}\nOffer ID: ${offer._id} \n Price: ${offer.price}\n`
-                  );
+              try {
+                // Hitta alla erbjudanden som innehåller åtminstone en produkt från den valda kategorin
+                let offersByCategory = await Offer.find({
+                  categories: chosenCategory._id,
                 });
-              } else {
+
+                if (offersByCategory.length > 0) {
+                  console.log(
+                    `\n --------- Offers containing products from ${chosenCategory.name} --------- \n`
+                  );
+                  offersByCategory.forEach((offer) => {
+                    console.log(
+                      `\nName: ${offer.name}\nOffer ID: ${offer._id} \n Price: ${offer.price}\n`
+                    );
+                  });
+                } else {
+                  console.log(
+                    `\nThere are currently no offers containing products from ${chosenCategory.name}, redirecting you to main menu`
+                  );
+                }
+              } catch (error) {
                 console.log(
-                  `\nThere are currently no offers containing products from ${chosenCategory.name}, redirecting you to main menu`
+                  "An error occurred while fetching offers by category:",
+                  error
                 );
               }
             } else {
               console.log("\nInvalid input, redirecting you to main menu");
             }
             /* 
-            exitOrMenu(); */
+              exitOrMenu(); */
             break;
 
           case "7":
-            console.log("\n --------- Offers by stock --------- \n");
-            let offersByStock = await Offer.find({
-              inStock: { $elemMatch: { status: true } },
-            });
+            console.log("\n--------- Offers by stock ---------\n");
 
-            if (offersByStock.length > 0) {
+            try {
+              const offersSummary = await Offer.aggregate([
+                {
+                  $project: {
+                    _id: 0,
+                    allInStock: { $allElementsTrue: "$inStock.status" },
+                    someInStock: { $anyElementTrue: "$inStock.status" },
+                  },
+                },
+                {
+                  $group: {
+                    _id: null,
+                    allInStockCount: {
+                      $sum: { $cond: [{ $eq: ["$allInStock", true] }, 1, 0] },
+                    },
+                    someInStockCount: {
+                      $sum: { $cond: [{ $eq: ["$someInStock", true] }, 1, 0] },
+                    },
+                    noneInStockCount: {
+                      $sum: { $cond: [{ $not: "$someInStock" }, 1, 0] },
+                    },
+                  },
+                },
+              ]);
+
+              const summary = offersSummary[0];
+
               console.log(
-                `\n --------- Offers containing products in stock --------- \n`
+                `Number of offers with all products in stock: ${summary.allInStockCount}`
               );
-              offersByStock.forEach((offer) => {
-                console.log(
-                  `\nOffer: ${offer.name} \n Price: ${offer.price}\n`
-                );
-              });
-            } else {
               console.log(
-                `\nThere are currently no offers containing products in stock, redirecting you to main menu`
+                `Number of offers with some products in stock: ${summary.someInStockCount}`
+              );
+              console.log(
+                `Number of offers with no products in stock: ${summary.noneInStockCount}`
+              );
+            } catch (error) {
+              console.error(
+                "An error occurred while fetching offers by stock:",
+                error
               );
             }
 
@@ -897,7 +832,7 @@ try {
 
             const showOrders = await Order.find();
 
-            // Skriv ut varje order med unikt index och struktur
+            // Loopa igenom varje order och skriv ut dess struktur
             for (let i = 0; i < showOrders.length; i++) {
               const order = showOrders[i];
 
@@ -905,18 +840,35 @@ try {
               console.log(`Order ID: ${order._id}`);
 
               // Hämta och skriv ut produkter i ordern
-              const productsString = await Promise.all(
-                order.products.map(async (productData) => {
+              if (order.products && order.products.length > 0) {
+                console.log("Products:");
+                for (const productData of order.products) {
                   const productId = productData.product;
                   const product = await Products.findById(productId);
 
                   if (product) {
-                    return `${product.name} (Quantity: ${productData.quantity})`;
+                    console.log(
+                      `  - ${product.name} (Quantity: ${productData.quantity})`
+                    );
                   }
-                })
-              );
+                }
+              }
 
-              console.log(`Products: ${productsString.join(", ")}`);
+              // Hämta och skriv ut erbjudanden i ordern
+              if (order.offers && order.offers.length > 0) {
+                console.log("Offers:");
+                for (const offerData of order.offers) {
+                  const offerId = offerData.offer;
+                  const offer = await Offer.findById(offerId);
+
+                  if (offer) {
+                    console.log(
+                      `  - ${offer.name} (Quantity: ${offerData.quantity})`
+                    );
+                  }
+                }
+              }
+
               console.log(`Details: ${order.details}`);
               console.log(`Created At: ${order.createdAt.toLocaleString()}`);
               console.log(`Status: ${order.status}`);
@@ -958,7 +910,7 @@ try {
             // Uppdatera lagernivåerna för produkterna i ordern
             for (const productData of orderToShip.products) {
               const productId = productData.product;
-              const product = await Products.findById(ObjectId);
+              const product = await Products.findById(productId);
 
               if (product) {
                 product.stock -= productData.quantity;

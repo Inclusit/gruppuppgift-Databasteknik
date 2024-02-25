@@ -332,6 +332,18 @@ export async function database() {
             name: "Opna Women's Short Sleeve Moisture",
           });
 
+          const offer4Product1 = await Products.findOne({
+            name: "Mens Casual Premium Slim Fit T-Shirts",
+          });
+
+          const offer4Product2 = await Products.findOne({
+            name: "White Gold Plated Princess",
+          });
+
+          const offer4Product3 = await Products.findOne({
+            name: "MBJ Women's Solid Short Sleeve Boat Neck V",
+          });
+
           let offersData = [
             {
               name: "Men's Casual Premium Offer",
@@ -386,6 +398,39 @@ export async function database() {
                 },
               ],
               bothInStock: offer3Product1.stock > 0 && offer3Product2.stock > 0,
+            },
+            {
+              name: "Premium family offer",
+              products: [offer4Product1, offer4Product2, offer4Product3],
+              categories: [
+                offer4Product1.category,
+                offer4Product2.category,
+                offer4Product3.category,
+              ],
+              price:
+                (offer4Product1.price +
+                  offer4Product2.price +
+                  offer4Product3.price) *
+                0.8,
+              active: true,
+              inStock: [
+                {
+                  product: offer4Product1._id,
+                  status: offer4Product1.stock > 0 ? true : false,
+                },
+                {
+                  product: offer4Product2._id,
+                  status: offer4Product2.stock > 0 ? true : false,
+                },
+                {
+                  product: offer4Product3._id,
+                  status: offer4Product3.stock > 0 ? true : false,
+                },
+              ],
+              bothInStock:
+                offer4Product1.stock > 0 &&
+                offer4Product2.stock > 0 &&
+                offer4Product3.stock > 0,
             },
           ];
 
