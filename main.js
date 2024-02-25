@@ -1049,7 +1049,7 @@ try {
             console.log("");
 
             let showDetailedProfits = p(
-              "Would you like to see a detailed profit breakdown for a specific product? y/n:"
+              "Would you like to see a detailed profit breakdown for a specific product? (input n for next option) y/n:"
             );
 
             if (showDetailedProfits === "y") {
@@ -1179,6 +1179,7 @@ try {
             ); /* 
             exitOrMenu(); */
             break;
+            
         } //End of switch/case loop
       } //End of runApp loop
     } //End of async menu function
