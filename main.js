@@ -652,10 +652,8 @@ try {
                       );
                     });
 
-                    // console.log("");
-                    // let productIndex = p(
-                    //   "Choose a product by entering its index (X to finish): "
-                    // );
+                    console.log("");
+                    
 
                     let productIndex = p(
                       "Choose a product by entering its index (X to finish):"
@@ -711,6 +709,8 @@ try {
                   );
 
                   const totalProfit = totalRevenue - totalCost;
+                  
+                  const orderDetails = p("Additional order details: ")
 
                   const order = await Order.create({
                     products: shoppingCart.map((product) => ({
@@ -721,6 +721,7 @@ try {
                       (total, product) => total + product.quantity,
                       0
                     ),
+                    details: orderDetails,
                     status: "pending", // standardstatus
                     total_revenue: totalRevenue,
                     total_profit: totalProfit,
