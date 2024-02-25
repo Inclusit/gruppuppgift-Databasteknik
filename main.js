@@ -57,7 +57,15 @@ try {
     });
 
     const orderSchema = mongoose.Schema({
-      offer: { type: mongoose.Schema.Types.ObjectId, ref: "Offer" },
+      offers: [
+        {
+          offer: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Offer", // Refererar till Offer-modellen
+          },
+          quantity: { type: Number, required: true },
+        },
+      ],
       products: [
         {
           product: {
@@ -513,7 +521,7 @@ try {
               break;
             } else {
               console.log("\nInvalid input, redirecting you to main menu");
-            }/* 
+            } /* 
             exitOrMenu(); */
             break;
 
@@ -545,7 +553,7 @@ try {
               console.log(
                 `\nThere are currently no offers between ${minPrice} and ${maxPrice}, redirecting you to main menu`
               );
-            }/* 
+            } /* 
             exitOrMenu(); */
             break;
 
@@ -592,7 +600,7 @@ try {
             } else {
               console.log("\nInvalid input, redirecting you to main menu");
             }
-/* 
+            /* 
             exitOrMenu(); */
             break;
 
@@ -644,10 +652,14 @@ try {
                       );
                     });
 
-                    console.log("");
+                    // console.log("");
+                    // let productIndex = p(
+                    //   "Choose a product by entering its index (X to finish): "
+                    // );
+
                     let productIndex = p(
-                      "Choose a product by entering its index (X to finish):  "
-                    ).toLowerCase();
+                      "Choose a product by entering its index (X to finish):"
+                    );
 
                     if (productIndex === "x") {
                       break;
@@ -746,7 +758,10 @@ try {
 
             if (orderConfirmation === "y") {
               let shoppingCart = [];
-              let showOffers = await Offer.find({}, "name price cost stock");
+              let showOffers = await Offer.find(
+                {},
+                "name products price cost bothInStock"
+              );
               while (true) {
                 console.log("--------- Offer list ---------");
 
@@ -769,18 +784,45 @@ try {
 
                     const quantity = parseInt(p("Enter the quantity: "));
 
-                    if (quantity > 0 && quantity <= selectedOffer.stock) {
+                    let allProductsAvailable = true;
+
+                    let productsInOffer = [];
+                    for (const productData of selectedOffer.products) {
+                      allProductsAvailable = true;
+                      const productId = productData._id;
+                      const product = await Products.findById(productId);
+
+                      productsInOffer.push(product);
+
+                      console.log(
+                        product.name,
+                        ", number of units in stock",
+                        product.stock
+                      );
+
+                      if (quantity > product.stock) {
+                        allProductsAvailable = false;
+                        console.log(
+                          "\nInvalid quantity or insufficient stock for product: " +
+                            product.name +
+                            ". Please try again.\n"
+                        );
+                        console.log(
+                          `You are trying to order ${quantity} units of ${product.name}. The stock is: ${product.stock}\n`
+                        );
+
+                        break;
+                      }
+                    }
+                    if (allProductsAvailable) {
                       shoppingCart.push({
                         offer: selectedOffer._id,
                         quantity: quantity,
                         name: selectedOffer.name,
+                        products: productsInOffer,
                       });
                       console.log(
-                        `Added ${quantity} units of ${selectedOffer.name} to the order.`
-                      );
-                    } else {
-                      console.log(
-                        "\nInvalid quantity or insufficient stock. Please try again.\n"
+                        `\nAdded ${quantity} units of ${selectedOffer.name} to the order.\n`
                       );
                     }
                   } else {
@@ -791,49 +833,63 @@ try {
                 }
               }
 
-              if (shoppingCart.length > 0) {
-                const { totalRevenue, totalCost } = shoppingCart.reduce(
-                  (totals, offer) => {
-                    const selectedOffer = showOffers.find((o) =>
-                      o._id.equals(offer.offer)
-                    );
-                    totals.totalRevenue += selectedOffer.price * offer.quantity;
-                    totals.totalCost += selectedOffer.cost * offer.quantity;
-                    return totals;
-                  },
-                  { totalRevenue: 0, totalCost: 0 }
-                );
-
-                const totalProfit = totalRevenue - totalCost;
-
-                const order = await Order.create({
-                  offers: shoppingCart.map((offer) => ({
-                    offer: offer.offer,
-                    quantity: offer.quantity,
-                  })),
-                  quantity: shoppingCart.reduce(
-                    (total, offer) => total + offer.quantity,
+              // Beräkna totalintäkter, totala kostnader och total vinst för erbjudandet
+              const { totalRevenue, totalCost } = shoppingCart.reduce(
+                (totals, offer) => {
+                  // Beräkna total intäkt för varje produkt i erbjudandet
+                  const productRevenue = offer.products.reduce(
+                    (productTotal, product) => productTotal + product.price,
                     0
-                  ),
-                  status: "pending",
-                  total_revenue: totalRevenue,
-                  total_profit: totalProfit,
-                });
+                  );
 
-                console.log(
-                  "Order created successfully with the following offers:"
-                );
-                shoppingCart.forEach((offer) => {
-                  console.log(`${offer.quantity} units of ${offer.name}`);
-                });
-              } else {
-                console.log(
-                  "No offers added to the order. Order creation failed."
-                );
-              }
+                  // Beräkna total kostnad för varje produkt i erbjudandet
+                  const productCost = offer.products.reduce(
+                    (productTotal, product) => productTotal + product.cost,
+                    0
+                  );
+
+                  totals.totalRevenue += productRevenue * offer.quantity;
+                  totals.totalCost += productCost * offer.quantity;
+                  return totals;
+                },
+                { totalRevenue: 0, totalCost: 0 }
+              );
+
+              const totalProfit = totalRevenue - totalCost;
+
+              // Skapa ordern i databasen med beräknade värden
+              const order = await Order.create({
+                offers: shoppingCart.map((offer) => ({
+                  offer: offer.offer,
+                  quantity: offer.quantity,
+                })),
+                quantity: shoppingCart.reduce(
+                  (total, offer) => total + offer.quantity,
+                  0
+                ),
+                status: "pending",
+                total_revenue: totalRevenue,
+                total_profit: totalProfit,
+              });
+              console.log(
+                "Order created successfully with the following offers:",
+                order //shoppingCart
+              );
+              console.log("total price", totalRevenue);
+              console.log("total cost", totalCost);
+              console.log("total profit", totalProfit);
+
+              console.log(
+                "Order created successfully with the following offers:"
+              );
+              shoppingCart.forEach((offer) => {
+                console.log(`${offer.quantity} units of ${offer.name}`);
+              });
+            } else {
+              console.log(
+                "No offers added to the order. Order creation failed."
+              );
             }
-
-           /*  exitOrMenu(); */
             break;
 
           case "10":
@@ -902,7 +958,7 @@ try {
             // Uppdatera lagernivåerna för produkterna i ordern
             for (const productData of orderToShip.products) {
               const productId = productData.product;
-              const product = await Products.findById(productId);
+              const product = await Products.findById(ObjectId);
 
               if (product) {
                 product.stock -= productData.quantity;
@@ -971,13 +1027,20 @@ try {
           case "13":
             const orders = await Order.find(
               {},
-              "createdAt status total_revenue products"
+              "createdAt status total_revenue products offers"
             );
 
             for (const order of orders) {
               console.log(`Order ${orders.indexOf(order) + 1}:`);
               console.log(`  Created at: ${order.createdAt.toLocaleString()}`);
               console.log("  Products:");
+
+              for (const offerData of order.offers) {
+                const offer = await Offer.findById(offerData.offer);
+                console.log(
+                  `    - ${offer.name} (Quantity: ${offerData.quantity})`
+                );
+              }
 
               for (const productData of order.products) {
                 const productId = productData.product;
@@ -1096,30 +1159,30 @@ try {
           default:
             console.log(
               "\n Invalid input \n Please choose an option between 1-15 \n"
-            );/* 
+            ); /* 
             exitOrMenu(); */
             break;
         } //End of switch/case loop
       } //End of runApp loop
     } //End of async menu function
-    function exitOrMenu() {
-      let exitOrMenu = 3;
+    // function exitOrMenu() {
+    //   let exitOrMenu = 3;
 
-      while (exitOrMenu != 1 && exitOrMenu != 2) {
-        console.log(
-          "\nWhat do you want to do now?\n 1. Main menu \n 2. Exit \n"
-        );
-        exitOrMenu = p("Please make a choice by entering a number: ");
-        if (exitOrMenu == 1) {
-          Menu();
-        } else if (exitOrMenu == 2) {
-          console.log("\nGoodbye!\n");
-          process.exit();
-        } else {
-          console.log("Invalid input, please try again");
-        }
-      }
-    }
+    //   while (exitOrMenu != 1 && exitOrMenu != 2) {
+    //     console.log(
+    //       "\nWhat do you want to do now?\n 1. Main menu \n 2. Exit \n"
+    //     );
+    //     exitOrMenu = p("Please make a choice by entering a number: ");
+    //     if (exitOrMenu == 1) {
+    //       Menu();
+    //     } else if (exitOrMenu == 2) {
+    //       console.log("\nGoodbye!\n");
+    //       process.exit();
+    //     } else {
+    //       console.log("Invalid input, please try again");
+    //     }
+    //   }
+    // }
 
     Menu();
   } //End of if-function
